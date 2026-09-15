@@ -23,8 +23,6 @@ Start dari garis panjang di kiri atau kanan, menuju finish pada balok hitam teng
 | `test/motor_test/motor_test.ino` | Pengujian motor melalui driver L298N. |
 | `test/sensor_test/sensor_test.ino` | Pembacaan sensor garis melalui Serial Monitor. |
 
-Nama folder dan file sketch dibuat sama agar dapat dibuka langsung di Arduino IDE. Setiap program lengkap ditempatkan dalam folder terpisah untuk menghindari deklarasi ganda saat kompilasi.
-
 ## Penggunaan
 
 1. Buka sketch di Arduino IDE dan pilih board serta port sesuai perangkat.
@@ -33,12 +31,8 @@ Nama folder dan file sketch dibuat sama agar dapat dibuka langsung di Arduino ID
 
 ## Pemetaan pin
 
-Sketch tes masih memakai konfigurasi eksperimen sebelumnya. Sesuaikan pin dengan wiring robot sebelum digunakan.
-
 | Sinyal | Program utama | Tes terkait |
 | --- | --- | --- |
 | Sensor | S1-S6: A0-A5 | S1-S5: A1-A5 |
 | Motor kiri (IN1, IN2, ENA) | 10, 9, 11 | 8, 7, 6 |
 | Motor kanan (IN3, IN4, ENB) | 8, 7, 6 | 10, 9, 11 |
-
-Varian PID eksperimen dihapus dari struktur aktif. Versi yang pernah di-commit tetap tersedia melalui riwayat Git.
