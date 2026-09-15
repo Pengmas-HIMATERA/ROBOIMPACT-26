@@ -2,7 +2,13 @@
 
 Program Arduino untuk robot line follower berbasis PID dengan manuver checkpoint dan parkir.
 
-## Program
+## Preview simulasi PID
+
+[Tonton video start sampai finish — MP4, 720p, 49 detik](Animation/output/pid-follow-preview.mp4)
+
+Kamera Ikuti dengan tiga dorongan lateral untuk memperlihatkan koreksi PID hingga robot berhenti di finish. Video memakai fisika asumsi dan recovery khusus simulator, bukan pengujian robot fisik. [Cara menjalankan simulator](Animation/README.md).
+
+## Sketch Arduino
 
 | Sketch | Fungsi |
 | --- | --- |

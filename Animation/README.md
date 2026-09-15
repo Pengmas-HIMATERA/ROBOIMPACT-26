@@ -6,7 +6,13 @@
 
 Visualisasi TypeScript + Three.js memakai port alur `code/line_follower_pid/line_follower_pid.ino`. Sketch asli tidak diubah. Ini replika logika kontrol dengan plant asumsi, bukan digital twin terkalibrasi atau emulator Arduino.
 
-## Menjalankan
+## Video preview
+
+[Tonton atau unduh MP4 — 720p, 49 detik](output/pid-follow-preview.mp4)
+
+Perjalanan dari start sampai finish dengan kamera Ikuti. Tiga dorongan lateral berkekuatan 2.0 diberikan pada detik simulasi 12, 22, dan 35, masing-masing selama 0.35 detik. Robot mencapai finish pada 44.69 detik dan berhenti dengan PWM 0/0. Hasil ini berlaku untuk skenario simulasi yang direkam.
+
+## Menjalankan simulator
 
 Node.js 22.18+; dari folder Animation:
 
