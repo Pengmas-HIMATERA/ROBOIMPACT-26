@@ -1,0 +1,21 @@
+{
+  "name": "roboimpact-pid-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite --host 127.0.0.1 --port 8765 --strictPort",
+    "dev": "vite --host 127.0.0.1 --port 8765 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test model.test.mjs",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 8765 --strictPort"
+  },
+  "dependencies": {
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.186.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.0"
+  }
+}

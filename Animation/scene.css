@@ -1,0 +1,54 @@
+.stage { position: relative; height: clamp(350px,46vh,620px); background: #dedfd4; overflow: hidden; }
+#scene-host { position: absolute; inset: 0; }
+#scene-host canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.arena-tag { position: absolute; top: 15px; left: 16px; display: flex; align-items: center; gap: 8px; font: 11px Consolas,monospace; background: #f3f4e8e8; border: 1px solid #a0ad93; border-radius: 0; padding: 7px 9px; pointer-events: none; }
+.arena-tag>span:last-child { font-size: 8px; color: #617152; letter-spacing: .7px; border-left: 1px solid #afbaa2; padding-left: 8px; }
+.labels-toggle { position: absolute; right: 16px; top: 15px; font-size: 10px; background: #f3f4e8e8; padding: 7px 9px; border: 1px solid #a0ad93; border-radius: 0; color: #435738; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.labels-toggle input { margin: 0; accent-color: var(--cyan); }
+.scene-help { position: absolute; bottom: 15px; right: 16px; color: #4a5f40; font-size: 9px; background: #f3f4e8e8; padding: 7px 9px; border-radius: 0; pointer-events: none; }
+.scene-help span { padding: 0 5px; color: #6c7c61; }
+.stage-foot { position: absolute; left: 16px; bottom: 15px; display: flex; align-items: center; gap: 8px; background: #f3f4e8ee; border: 1px solid #a0ad93; border-radius: 0; padding: 8px 10px; font-size: 10px; pointer-events: none; }
+#scene-status { position: absolute; inset: 80px 20px auto; padding: 18px; background: #f3f4e8f5; border: 1px solid #a0ad93; border-radius: 0; font-size: 12px; line-height: 1.7; }
+#scene-status[hidden] { display: none; }
+@media(max-width:1000px) { .scene-help { display: none; }.arena-tag>span:last-child { display: none; } }
+@media(max-width:760px) { .stage { height: 420px; } }
+@media(max-width:460px) { .stage { height: 350px; }.stage-foot { left: 10px; right: 10px; bottom: 10px; }.arena-tag { left: 10px; }.labels-toggle { right: 10px; } }
+
+.arena-tag,.labels-toggle,.scene-help,.stage-foot { font-family: Consolas,monospace; color: #415339; }
+.arena-tag .cyan-dot,.stage-foot .cyan-dot { background: #6a8457; border-radius: 0; }
+
+.arena-panel > .panel-heading { flex-wrap: wrap; }
+.arena-panel .camera-controls { margin-left: auto; }
+.fullscreen-button { border-color: #87967a; color: #354531; white-space: nowrap; }
+body.arena-is-expanded { overflow: hidden; }
+.arena-panel.arena-expanded {
+  position: fixed; inset: 0; z-index: 1000; width: 100%; height: 100dvh;
+  max-width: none; margin: 0; border: 0; background: #dedfd4;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.arena-expanded .stage { height: 100%; min-height: 0; }
+.arena-expanded > .panel-heading { border-top: 0; background: #273729; color: #eef1e8; padding: 12px 22px; }
+.arena-expanded .fullscreen-button { color: #eff3e7; border-color: #78866f; background: transparent; }
+.arena-expanded .arena-actions { padding: 16px 24px; gap: 16px; background: #f4f4eb; }
+.arena-expanded .arena-actions button { min-height: 44px; padding: 10px 20px; font-size: 13px; }
+.arena-expanded .metrics { padding: 10px 0; }
+.arena-expanded .metrics strong { font-size: 20px; }
+@media(max-width:600px) {
+  .arena-expanded > .panel-heading { padding: 8px 12px; gap: 8px; }
+  .arena-expanded .arena-actions { padding: 10px 12px; gap: 8px; }
+  .arena-expanded .arena-actions button { padding: 8px 12px; }
+  .arena-expanded .push-actions { width: 100%; }
+  .arena-expanded .metrics { display: none; }
+  .arena-panel .camera-controls { order: 3; width: 100%; justify-content: center; }
+  .fullscreen-button { margin-left: auto; }
+}
+@media(max-height:500px) {
+  .arena-expanded .metrics, .arena-expanded .arena-tag, .arena-expanded .scene-help { display: none; }
+  .arena-expanded .arena-actions { padding: 6px 12px; flex-wrap: nowrap; }
+  .arena-expanded .push-actions { width: auto; }
+}
+
+.arena-expanded .camera-controls button { color: #e8eedf; }
+.arena-expanded .camera-controls button.active { color: #273729; background: #eff2e8; }
+.arena-expanded .camera-controls button:hover { color: #273729; background: #dce5d4; }
