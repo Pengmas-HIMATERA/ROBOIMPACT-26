@@ -41,4 +41,4 @@ Sketch tes masih memakai konfigurasi eksperimen sebelumnya. Sesuaikan pin dengan
 | Motor kiri (IN1, IN2, ENA) | 10, 9, 11 | 8, 7, 6 |
 | Motor kanan (IN3, IN4, ENB) | 8, 7, 6 | 10, 9, 11 |
 
-Varian PID eksperimen dan tes MQ-2 dihapus dari struktur aktif. Versi yang pernah di-commit tetap tersedia melalui riwayat Git.
+Varian PID eksperimen dihapus dari struktur aktif. Versi yang pernah di-commit tetap tersedia melalui riwayat Git.
