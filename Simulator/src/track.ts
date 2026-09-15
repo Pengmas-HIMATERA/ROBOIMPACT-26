@@ -1,5 +1,5 @@
 import { SENSOR_FORWARD, SENSOR_OFFSETS } from './robot.ts';
-import mask from './assets/track-mask.json' with { type: 'json' };
+import mask from '../assets/track-mask.json' with { type: 'json' };
 import type { PIDConfig } from './types';
 
 export function paperSide(config: PIDConfig): number { return (config.boardMeters ?? 2) * 10; }

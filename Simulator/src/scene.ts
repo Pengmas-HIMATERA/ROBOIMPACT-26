@@ -4,7 +4,7 @@ import { element } from './dom';
 import type { Arena } from './types';
 import { CHASSIS_LENGTH, CHASSIS_WIDTH, WHEEL_RADIUS, WHEEL_TRACK, SENSOR_FORWARD, SENSOR_OFFSETS } from './robot';
 import { paperSide } from './track';
-import trackImage from './assets/track.png';
+import trackImage from '../assets/track.png';
 
 type CameraMode = 'perspective' | 'top' | 'side' | 'follow';
 

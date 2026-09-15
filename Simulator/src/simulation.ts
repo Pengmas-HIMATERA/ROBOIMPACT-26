@@ -15,7 +15,7 @@ import('./scene').then(({ createArena }) => {
   arena.setLabels(input('show-labels').checked);
   el('scene-status').hidden = true;
 }).catch(error => {
-  el('scene-status').textContent = 'Arena 3D gagal dimuat. Jalankan npm install di folder Animation, buka lewat localhost, dan pastikan WebGL 2 tersedia. Grafik PID tetap berjalan.';
+  el('scene-status').textContent = 'Arena 3D gagal dimuat. Jalankan npm install di folder Simulator, buka lewat localhost, dan pastikan WebGL 2 tersedia. Grafik PID tetap berjalan.';
   console.error('Arena 3D:', error);
 });
 

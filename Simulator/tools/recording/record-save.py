@@ -2,7 +2,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
-output = Path(__file__).parent / 'output' / 'pid-follow-preview.webm'
+output = Path(__file__).resolve().parents[2] / 'output' / 'pid-follow-preview.webm'
 
 class Receiver(BaseHTTPRequestHandler):
     def do_POST(self):

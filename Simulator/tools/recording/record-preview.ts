@@ -1,6 +1,6 @@
-import {createArena} from './scene';
-import {createState,advance,pushRobot,DT} from './model';
-import type {PIDConfig} from './types';
+import {createArena} from '../../src/scene';
+import {createState,advance,pushRobot,DT} from '../../src/model';
+import type {PIDConfig} from '../../src/types';
 const config:PIDConfig={kp:18,ki:0,kd:5,pushStrength:2,bias:0,speed:1,loopMs:10,swapMotors:false,track:'pdf',boardMeters:2,startSide:'left'};
 const schedule=[[12,2],[22,-2],[35,2]];
 const host=document.getElementById('host')!;

@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "types": ["vite/client"]
   },
-  "include": ["*.ts"]
+  "include": ["src/**/*.ts", "tools/**/*.ts"]
 }

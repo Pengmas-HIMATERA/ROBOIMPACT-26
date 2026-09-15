@@ -1,15 +1,15 @@
-import { CHASSIS_LENGTH, CHASSIS_WIDTH, WHEEL_TRACK, SENSOR_FORWARD } from './robot.ts';
+import { CHASSIS_LENGTH, CHASSIS_WIDTH, WHEEL_TRACK, SENSOR_FORWARD } from '../src/robot.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createFirmware, firmwareLoop, SKETCH } from './firmware.ts';
-import { advance, createState, pushRobot, DT } from './model.ts';
+import { createFirmware, firmwareLoop, SKETCH } from '../src/firmware.ts';
+import { advance, createState, pushRobot, DT } from '../src/model.ts';
 const gain = { kp: 18, ki: 0, kd: 5 };
 const config = { ...gain, pushStrength: 6, bias: 0, speed: 1, loopMs: 10, swapMotors: false };
 const center = [30,30,850,30,30], lost = [30,30,30,30,30];
 
 test('constants match the active sketch', () => {
- const source = readFileSync(new URL('../code/line_follower_pid/line_follower_pid.ino', import.meta.url), 'utf8');
+ const source = readFileSync(new URL('../../code/line_follower_pid/line_follower_pid.ino', import.meta.url), 'utf8');
  for (const [symbol, value] of Object.entries({Kp:18,Ki:0,Kd:5,baseSpeedL:55,baseSpeedR:55,minSpeed:0,maxSpeed:90,sensorThreshold:100})) {
    assert.equal(Number(source.match(new RegExp('(?:float|int) '+symbol+'\\s*=\\s*([0-9.]+)'))?.[1]),value);
  }
@@ -81,7 +81,7 @@ test('lateral pushes change sensors and preserve finite physical state', () => {
 
 
 test('PDF mask follows actual artwork, including black markers and white background', async () => {
- const {trackBlack} = await import('./track.ts');
+ const {trackBlack} = await import('../src/track.ts');
  const cfg={...config,track:'pdf',boardMeters:2};
  const at=(px,py)=>trackBlack((px/1600-.5)*20,(py/1600-.5)*20,cfg);
  assert.equal(at(150,700),1); // left outer straight
@@ -121,7 +121,7 @@ test('approaching the central finish from either side stops until reset', () => 
  }
 });
 test('finish detects the center from both sides and excludes start bars and straight mode', async () => {
- const {atTrackFinish,trackStart}=await import('./track.ts');
+ const {atTrackFinish,trackStart}=await import('../src/track.ts');
  for(const startSide of ['left','right']) {
   const cfg={...config,track:'pdf',boardMeters:2,startSide};
   const s=trackStart(cfg);
