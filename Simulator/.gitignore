@@ -1,0 +1,14 @@
+node_modules/
+dist/
+
+# Generated recordings and review frames
+output/*
+!output/pid-follow-preview.mp4
+
+# Local environment and Python recorder cache
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+*.tsbuildinfo

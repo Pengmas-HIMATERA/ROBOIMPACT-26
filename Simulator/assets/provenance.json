@@ -1,0 +1,14 @@
+{
+  "source": "public/Track.pdf",
+  "sha256": "0c23f95d39ce4da9c07503109ffde8467a1247c34252ca9dc4694da6e7c8dc8a",
+  "pages": 1,
+  "pagePoints": [
+    5669,
+    5669
+  ],
+  "nominalPageMeters": 1.9998972222222222,
+  "render": "pdftoppm -scale-to 1600 -png -singlefile",
+  "mask": "grayscale < 128; row run lengths; same rendering as texture",
+  "scaleStatus": "unconfirmed print size, not dimension annotations",
+  "startStatus": "user confirmed two sides, start from long marker; inward heading"
+}

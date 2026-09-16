@@ -1,8 +1,20 @@
-# Eksperimen Robotika I
+# ROBOIMPACT 2026 | LINE FOLLOWER
 
 Program Arduino untuk robot line follower berbasis PID dengan manuver checkpoint dan parkir.
 
-## Program
+## Preview simulasi PID
+
+[![Animasi lengkap: start, tiga dorongan, dan finish](Simulator/assets/pid-preview.gif)](Simulator/output/pid-follow-preview.mp4)
+
+Kamera Ikuti dengan tiga dorongan lateral untuk memperlihatkan koreksi PID hingga robot berhenti di finish. Video memakai fisika asumsi dan recovery khusus simulator, bukan pengujian robot fisik. [Cara menjalankan simulator](Simulator/README.md).
+
+## Track
+
+<img src="Simulator/assets/track.png" alt="Track line follower: start kiri atau kanan dan finish pada balok hitam tengah" width="560">
+
+Start dari garis panjang di kiri atau kanan, menuju finish pada balok hitam tengah.
+
+## Sketch Arduino
 
 | Sketch | Fungsi |
 | --- | --- |
@@ -10,8 +22,6 @@ Program Arduino untuk robot line follower berbasis PID dengan manuver checkpoint
 | `line_follower_pid/line_follower_pid.ino` | Versi PID dan pencarian garis tanpa manuver misi (sebelumnya `line_follower1.ino`). |
 | `test/motor_test/motor_test.ino` | Pengujian motor melalui driver L298N. |
 | `test/sensor_test/sensor_test.ino` | Pembacaan sensor garis melalui Serial Monitor. |
-
-Nama folder dan file sketch dibuat sama agar dapat dibuka langsung di Arduino IDE. Setiap program lengkap ditempatkan dalam folder terpisah untuk menghindari deklarasi ganda saat kompilasi.
 
 ## Penggunaan
 
@@ -21,12 +31,8 @@ Nama folder dan file sketch dibuat sama agar dapat dibuka langsung di Arduino ID
 
 ## Pemetaan pin
 
-Sketch tes masih memakai konfigurasi eksperimen sebelumnya. Sesuaikan pin dengan wiring robot sebelum digunakan.
-
 | Sinyal | Program utama | Tes terkait |
 | --- | --- | --- |
 | Sensor | S1-S6: A0-A5 | S1-S5: A1-A5 |
 | Motor kiri (IN1, IN2, ENA) | 10, 9, 11 | 8, 7, 6 |
 | Motor kanan (IN3, IN4, ENB) | 8, 7, 6 | 10, 9, 11 |
-
-Varian PID eksperimen dan tes MQ-2 dihapus dari struktur aktif. Versi yang pernah di-commit tetap tersedia melalui riwayat Git.
