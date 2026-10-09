@@ -8,9 +8,9 @@ Simulator memakai **bang-bang tiga sensor sebagai default**, dengan PID sebagai 
 
 ## Preview simulasi PID
 
-[![Animasi lengkap: start, tiga dorongan, dan finish](Simulator/assets/pid-preview.gif)](Simulator/output/pid-follow-preview.mp4)
+[![Animasi lengkap model terbaru: start, tiga dorongan, dan finish](Simulator/assets/pid-preview.gif?v=20261009)](Simulator/output/pid-follow-preview.mp4)
 
-Kamera Ikuti dengan tiga dorongan lateral untuk memperlihatkan koreksi PID hingga robot berhenti di finish. Video memakai fisika asumsi dan recovery khusus simulator, bukan pengujian robot fisik. [Cara menjalankan simulator](Simulator/README.md).
+Preview model terbaru: Uno di tray bertiang, roda TT kuning, dan tiga sensor IR biru. Kamera Ikuti dengan tiga dorongan lateral memperlihatkan koreksi PID hingga robot berhenti di finish. GIF dan MP4 ditayangkan **4×**, memakai Kp 30, Ki 0, Kd 5 serta massa 550 g. Ini simulasi fisika asumsi dan recovery khusus simulator, bukan pengujian robot fisik. [Cara menjalankan simulator](Simulator/README.md).
 
 ## Track
 

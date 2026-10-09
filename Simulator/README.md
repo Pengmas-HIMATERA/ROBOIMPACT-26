@@ -16,9 +16,9 @@ Tuning tiga sensor memakai **Kp 30, Ki 0, Kd 5**, dengan pencarian garis bergant
 
 ## Preview
 
-[![Perjalanan lengkap: start, tiga dorongan, lalu finish](assets/pid-preview.gif)](output/pid-follow-preview.mp4)
+[![Perjalanan lengkap model terbaru: start, tiga dorongan, lalu finish](assets/pid-preview.gif?v=20261009)](output/pid-follow-preview.mp4)
 
-Kamera **Ikuti**, tiga dorongan lateral, lalu berhenti di finish. Ini hasil skenario simulasi yang direkam; model fisiknya belum dikalibrasi dengan robot asli.
+Model terbaru memakai Uno di tray bertiang, roda TT kuning, dan tiga sensor IR biru. Kamera **Ikuti**, tiga dorongan lateral, lalu berhenti di finish; GIF dan MP4 ditayangkan **4×**. PID memakai **Kp 30, Ki 0, Kd 5** dengan massa **550 g**. Model fisiknya belum dikalibrasi dengan robot asli.
 
 ## Mulai
 
@@ -187,7 +187,14 @@ uv run --no-project python tools/recording/record-save.py
 
 Buka [halaman perekam](http://127.0.0.1:8765/tools/recording/record-preview.html). Rekaman disimpan ke `output/pid-follow-preview.webm`; penerima menggunakan port 8766.
 
-Skenario preview memakai kamera Ikuti dengan dorongan berkekuatan 2.0 pada detik simulasi 12, 22, dan 35, masing-masing 0.35 detik. Rekaman yang tersedia mencapai finish pada 44.69 detik.
+Skenario preview memakai kamera Ikuti dengan dorongan berkekuatan 2.0 pada detik simulasi 12, 22, dan 35, masing-masing 0.35 detik. Gain dan massa perekam mengikuti konstanta simulator terbaru. Preview PID mencapai finish pada 50,42 detik simulasi.
+
+Untuk membuat GIF README, tekan **Ekspor GIF 4x (frame deterministik)**. Perekam menjalankan semua langkah fisika `DT`, lalu menyimpan frame PNG pada 12 fps dengan kecepatan tayang 4×. Frame berada di `output/preview-frames/`; parameter dan hasil disimpan di `output/preview-recording.json`. Setelah status **Selesai**, konversi dengan FFmpeg:
+
+```powershell
+ffmpeg -y -framerate 12 -i output/preview-frames/%05d.png -c:v libx264 -crf 20 -pix_fmt yuv420p -movflags +faststart output/pid-follow-preview.mp4
+ffmpeg -y -i output/pid-follow-preview.mp4 -filter_complex "fps=12,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" -loop 0 assets/pid-preview.gif
+```
 
 MP4 preview disimpan di Git. Ekspor lokal lain di `output/` diabaikan oleh `.gitignore`; GIF README berada di `assets/`.
 
