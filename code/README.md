@@ -15,7 +15,7 @@ Buka masing-masing sketch di Arduino IDE, pilih board dan port, lalu upload. Nam
 | 3 · Bang-bang | [line_follower_bang_bang.ino](line_follower_bang_bang/line_follower_bang_bang.ino) | Kontrol tiga sensor dengan threshold 400 | 9600 baud |
 | 4 · PID | [line_follower_pid.ino](line_follower_pid/line_follower_pid.ino) | Respons robot saat mengikuti garis | 115200 baud |
 
-> **Sebelum menjalankan:** cocokkan pin sensor dan motor, karena pemetaan antar-sketch berbeda. Angkat roda saat tes motor pertama; sketch langsung menjalankan motor.
+> **Sebelum menjalankan:** cocokkan pin sensor dan motor dengan wiring. Sketch aktif memakai pemetaan yang sama; referensi lama memiliki pemetaan berbeda. Angkat roda saat tes motor pertama; sketch langsung menjalankan motor.
 
 ## Kontrol bang-bang
 
