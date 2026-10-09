@@ -1,8 +1,8 @@
 # ROBOIMPACT · Kode robot
 
-Materi praktik robot line follower dua roda: **sensor → motor → PID → lost-line**.
+Materi praktik robot line follower dua roda: **sensor → motor → bang-bang → PID → lost-line**.
 
-[Mulai praktik](#mulai-praktik) · [Panduan PID](#panduan-pid) · [Wiring](#wiring) · [Lost-line](#lost-line) · [Simulator](../Simulator/README.md)
+[Mulai praktik](#mulai-praktik) · [Panduan bang-bang](line_follower_bang_bang/README.md) · [Panduan PID](#panduan-pid) · [Wiring](#wiring) · [Lost-line](#lost-line) · [Simulator](../Simulator/README.md)
 
 ## Mulai praktik
 
@@ -12,9 +12,16 @@ Buka masing-masing sketch di Arduino IDE, pilih board dan port, lalu upload. Nam
 | --- | --- | --- | --- |
 | 1 · Sensor | [sensor_test.ino](test/sensor_test/sensor_test.ino) | Nilai sensor di putih dan hitam; tentukan threshold | 115200 baud |
 | 2 · Motor | [motor_test.ino](test/motor_test/motor_test.ino) | Posisi roda dan arah putaran | 9600 baud |
-| 3 · PID | [line_follower_pid.ino](line_follower_pid/line_follower_pid.ino) | Respons robot saat mengikuti garis | 115200 baud |
+| 3 · Bang-bang | [line_follower_bang_bang.ino](line_follower_bang_bang/line_follower_bang_bang.ino) | Kontrol tiga sensor dengan threshold 400 | 9600 baud |
+| 4 · PID | [line_follower_pid.ino](line_follower_pid/line_follower_pid.ino) | Respons robot saat mengikuti garis | 115200 baud |
 
-> **Sebelum menjalankan:** cocokkan [pin sensor](#sensor), karena kedua sketch memakai pin berbeda. Angkat roda saat tes motor pertama; sketch langsung menjalankan motor.
+> **Sebelum menjalankan:** cocokkan pin sensor dan motor, karena pemetaan antar-sketch berbeda. Angkat roda saat tes motor pertama; sketch langsung menjalankan motor.
+
+## Kontrol bang-bang
+
+Sketch bang-bang memakai **kiri A0, tengah A1, kanan A2**, threshold **400**, dan PWM maju **86/86**. Motor kiri IN10/9–EN11, kanan IN8/7–EN6, sama dengan PID dan diagram hardware.
+
+Sensor samping mengambil prioritas; pola simetris termasuk semua hitam tetap maju. Garis hilang memicu recovery lalu stop setelah 3 detik; Reset board untuk mencoba lagi. Tidak ada deteksi finish berdasarkan sensor saja. [Panduan lengkap](line_follower_bang_bang/README.md) memuat tabel keputusan dan tuning.
 
 ## Panduan PID
 
@@ -22,7 +29,7 @@ PID mengubah selisih kecepatan kedua motor agar garis kembali berada di tengah s
 
 | Gain awal | Kecepatan dasar | Batas PWM |
 | --- | --- | --- |
-| **Kp = 18 · Ki = 0 · Kd = 5** | 55 per motor | 0–90 pada skala 0–255 |
+| **Kp = 18 · Ki = 0,01 · Kd = 5** | 60 per motor | 0–85 pada skala 0–255 |
 
 ### P · Koreksi posisi sekarang
 
@@ -44,7 +51,7 @@ PID mengubah selisih kecepatan kedua motor agar garis kembali berada di tengah s
 
 Gambar menunjukkan ilustrasi respons, bukan data uji. Hasil bergantung pada gain lain dan kondisi robot.
 
-> **Semua gain nol:** saat tracking, PWM menjadi 55/55 tanpa koreksi PID. Logika lost-line tetap bisa mengambil alih.
+> **Semua gain nol:** saat tracking, PWM menjadi 60/60 tanpa koreksi PID. Logika lost-line tetap bisa mengambil alih.
 
 <details>
 <summary><strong>Detail teknis · Rumus dan implementasi PID</strong></summary>
@@ -53,7 +60,7 @@ Gambar menunjukkan ilustrasi respons, bukan data uji. Hasil bergantung pada gain
 Baca sensor → hitung error → hitung koreksi PID → atur PWM motor → ulangi
 ```
 
-`readSensors()` menganggap sensor aktif jika ADC **lebih besar dari 100**. Bobot posisi S1–S5 adalah `[-10, -2, 0, 2, 10]`. Setiap sensor aktif menyumbang bobot sinyal `ADC - 100`:
+`readSensors()` menganggap sensor aktif jika ADC **lebih besar dari 300**. Sensor kiri/tengah/kanan memakai A0/A1/A2 dengan bobot `[-2, 0, 2]`. Setiap sensor aktif menyumbang bobot sinyal `ADC - 300`:
 
 ```text
 error = jumlah(posisi × bobot sinyal) / jumlah(bobot sinyal)
@@ -67,15 +74,15 @@ Targetnya `error = 0`, yaitu garis berada di tengah array sensor.
 | I | Mengoreksi error yang terus bertahan | `Ki × integral`, dengan `integral += error`, dibatasi ±100 |
 | D | Merespons perubahan error, dapat membantu mengurangi overshoot | `Kd × (error - lastError)` |
 
-Gain awal: **Kp 18, Ki 0, Kd 5**. Karena Ki nol, kontribusi I tidak memengaruhi output, walaupun akumulatornya tetap diperbarui.
+Gain dari `pengmas.cpp`: **Kp 18, Ki 0,01, Kd 5**. Integral dibatasi ±100. Versi lima sensor sebelumnya disimpan di [code/reference](reference/README.md).
 
 ```text
 pidOutput = P + I + D
-PWM kiri  = constrain(int(55 + pidOutput), 0, 90)
-PWM kanan = constrain(int(55 - pidOutput), 0, 90)
+PWM kiri  = constrain(int(60 + pidOutput), 0, 85)
+PWM kanan = constrain(int(60 - pidOutput), 0, 85)
 ```
 
-Contoh output `+20` menghasilkan PWM 75 dan 35. Arah belok fisiknya bergantung pada pemasangan motor dan urutan sensor. Angka PWM bukan RPM: batas 90 adalah perintah pada skala 0–255.
+Contoh output `+20` menghasilkan PWM 80 dan 40. Arah belok fisiknya bergantung pada pemasangan motor dan urutan sensor. Angka PWM bukan RPM: batas 85 adalah perintah pada skala 0–255.
 
 Integral dan derivative dihitung **per loop**, tanpa faktor waktu `dt`. `delay(1)` tidak menjamin periode loop tepat 1 ms karena pembacaan ADC dan keluaran Serial juga membutuhkan waktu.
 
@@ -84,15 +91,15 @@ Integral dan derivative dihitung **per loop**, tanpa faktor waktu `dt`. `delay(1
 
 ## Wiring
 
+[Diagram hardware umum](../hardware/README.md) memakai part Fritzing yang menyerupai Uno, L298N, sensor biru, dan motor TT. Rangkaian motor sama untuk bang-bang dan PID; tersedia versi tiga dan lima sensor.
+
 ### Sensor
 
 | Sensor | Sketch PID | Tes sensor |
 | --- | --- | --- |
-| S1 | A0 | A1 |
-| S2 | A1 | A2 |
-| S3 | A2 | A3 |
-| S4 | A3 | A4 |
-| S5 | A4 | A5 |
+| S1 · kiri | A0 | A0 |
+| S2 · tengah | A1 | A1 |
+| S3 · kanan | A2 | A2 |
 
 Sesuaikan deklarasi pin dengan wiring sebelum berpindah sketch. Tes sensor menampilkan nilai analog setiap **300 ms**.
 
@@ -100,15 +107,15 @@ Sesuaikan deklarasi pin dengan wiring sebelum berpindah sketch. Tes sensor menam
 
 | Fungsi | Pin arah | Pin PWM | Sketch |
 | --- | --- | --- | --- |
-| `setLeftMotor()` | 8, 7 | 6 | PID dan tes motor |
-| `setRightMotor()` | 10, 9 | 11 | PID dan tes motor |
+| `setLeftMotor()` | 10, 9 | 11 | PID dan tes motor |
+| `setRightMotor()` | 8, 7 | 6 | PID dan tes motor |
 
-**Pastikan posisi roda lewat tes motor.** Tabel menunjukkan pin yang dikendalikan fungsi; penamaan kiri/kanan pada source belum konsisten.
+**Pastikan posisi roda lewat tes motor.** Pemetaan kini sama dengan deklarasi dan diagram hardware: kiri kanal A, kanan kanal B.
 
 <details>
 <summary><strong>Detail teknis · Penamaan pin dan urutan tes motor</strong></summary>
 
-Pada sketch PID, `setRightMotor()` memakai konstanta `motorL_*`, sedangkan `setLeftMotor()` memakai `motorR_*`. Komentar kiri/kanan pada tes motor juga tidak konsisten.
+Pada sketch PID dan tes motor aktif, `setLeftMotor()` memakai `motorL_*`, sedangkan `setRightMotor()` memakai `motorR_*`. Versi lama dengan pemetaan berbeda disimpan di `code/reference`.
 
 Loop tes motor mengulang urutan berikut:
 
@@ -137,7 +144,7 @@ Jika semua sensor tidak aktif, robot mempertahankan koreksi lama terlebih dahulu
 <details>
 <summary><strong>Bahan diskusi · Batas logika lost-line</strong></summary>
 
-- Arah pencarian hanya diperbarui saat error **> 5** atau **< −5**, sehingga arah tersimpan bisa kedaluwarsa.
+- Arah pencarian hanya diperbarui saat error **> 0,25** atau **< −0,25**, sehingga arah tersimpan bisa kedaluwarsa.
 - Jika arah masih nol, motor tidak menerima perintah baru; saat startup motor bisa tetap diam.
 - Pencarian belum memiliki timeout.
 - Derivative tidak direset saat garis ditemukan kembali.

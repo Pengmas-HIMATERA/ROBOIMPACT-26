@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { element } from './dom';
 import type { Arena } from './types';
-import { CHASSIS_LENGTH, CHASSIS_WIDTH, WHEEL_RADIUS, WHEEL_TRACK, SENSOR_FORWARD, SENSOR_OFFSETS } from './robot';
+import { CHASSIS_LENGTH, CHASSIS_WIDTH, WHEEL_RADIUS, WHEEL_TRACK, SENSOR_FORWARD, SENSOR_OFFSETS, UNO } from './robot';
 import { paperSide } from './track';
-import trackImage from '../assets/track.png';
+import trackVector from '../assets/track.svg';
 
 type CameraMode = 'perspective' | 'top' | 'side' | 'follow';
 
@@ -63,13 +64,31 @@ export function createArena(host: HTMLElement): Arena {
     for (const x of [-4.5, 4.5]) roadMarkers.push(box(.45, .015, .06, dark, straightRoad, x, -.02, i * 2 - 24));
   }
 
-  const trackTexture = new THREE.TextureLoader().load(trackImage, undefined, undefined, () => {
+  // Vector geometry stays crisp at any zoom; there is no bitmap track texture.
+  const pdfBoard = new THREE.Group();
+  const paper = mesh(new THREE.PlaneGeometry(1, 1), material(0xffffff), pdfBoard);
+  paper.castShadow = false;
+  new SVGLoader().load(trackVector, data => {
+    // Three returns documentElement; the installed declaration says XMLDocument.
+    const svgRoot = data.xml as unknown as Element;
+    const pageWidth = Number(svgRoot.getAttribute('viewBox')?.split(/\s+/)[2]);
+    if (!Number.isFinite(pageWidth) || pageWidth <= 0) throw new Error('Invalid track SVG viewBox');
+    for (const path of data.paths) {
+      if (path.color.getHex() !== 0) continue;
+      for (const shape of SVGLoader.createShapes(path)) {
+        const geometry = new THREE.ShapeGeometry(shape, 64);
+        geometry.scale(1 / pageWidth, -1 / pageWidth, 1);
+        geometry.translate(-.5, .5, .0002);
+        const ink = material(0x000000);
+        ink.side = THREE.DoubleSide;
+        const line = mesh(geometry, ink, pdfBoard);
+        line.castShadow = false;
+      }
+    }
+  }, undefined, () => {
     element('scene-status').hidden = false;
     element('scene-status').textContent = 'Gambar track gagal dimuat; muat ulang halaman.';
   });
-  trackTexture.colorSpace = THREE.SRGBColorSpace;
-  trackTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const pdfBoard = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshStandardMaterial({ map: trackTexture, roughness: 1 }));
   pdfBoard.rotation.x = -Math.PI / 2;
   pdfBoard.receiveShadow = true;
   scene.add(pdfBoard);
@@ -111,46 +130,52 @@ export function createArena(host: HTMLElement): Arena {
   }
   const deck = mesh(new THREE.ExtrudeGeometry(outline,{depth:.045,bevelEnabled:true,bevelSize:.008,bevelThickness:.006,bevelSegments:2,steps:1}),carbon,robot,-.1,.27,0);
   deck.rotation.x=Math.PI/2;
-  box(.53, .055, .57, pcb, robot, -.13, .355, 0);
-  box(.24, .055, .24, dark, robot, -.13, .41, 0);
-  box(.32, .14, .23, dark, robot, -.32, .495, 0);
-  for (const z of [-.26, .26]) for (const x of [-.32, .07]) {
-    box(.035, .08, .035, silver, robot, x, .3, z);
-    for (let i = 0; i < 5; i++) box(.022, .028, .032, silver, robot, -.28 + i * .065, .4, z);
+  // Keep heavy cells low and centered; mount the Uno on a small upper tray.
+  const blue = material(0x146eac);
+  box(.68, .025, .43, dark, robot, -.14, .305, 0);
+  for (const z of [-.1, .1]) {
+    const cell = mesh(new THREE.CylinderGeometry(.09, .09, .65, 20), material(0x3374ba), robot, -.14, .395, z);
+    cell.rotation.z = Math.PI / 2;
+    for (const x of [-.47, .19]) {
+      const cap = mesh(new THREE.CylinderGeometry(.075, .075, .012, 12), silver, robot, x, .395, z);
+      cap.rotation.z = Math.PI / 2;
+    }
   }
-  // Pin headers, processor legs, USB socket and power components.
-  for (const z of [-.18,.18]) {
-    box(.39,.045,.05,dark,robot,-.12,.417,z);
-    for(let n=0;n<8;n++) box(.012,.028,.022,gold,robot,-.28+n*.045,.449,z);
+  // Four standoffs transfer board load into the chassis instead of the battery.
+  for (const x of [-.43, .22]) for (const z of [-.32, .32]) {
+    mesh(new THREE.CylinderGeometry(.015, .015, .21, 12), gold, robot, x, .39, z);
   }
-  for(let n=0;n<7;n++) for(const z of [-.128,.128]) box(.012,.012,.037,silver,robot,-.23+n*.033,.397,z);
-  box(.1,.06,.14,silver,robot,.13,.41,0);
-  box(.012,.039,.105,dark,robot,.185,.41,0);
-  for(const z of [-.2,.2]) {
-    mesh(new THREE.CylinderGeometry(.035,.035,.09,16),dark,robot,-.33,.432,z);
-    mesh(new THREE.CylinderGeometry(.029,.029,.005,16),silver,robot,-.33,.48,z);
+  box(.74, .018, .62, carbon, robot, -.1, .502, 0);
+  box(UNO.length, .016, UNO.width, blue, robot, -.1, .523, 0);
+  // ATmega328P DIP, digital/analog headers, USB-B and barrel power connector.
+  box(.28, .03, .09, dark, robot, -.1, .548, .055);
+  for (let n = 0; n < 14; n++) for (const z of [.001, .109]) {
+    box(.012, .018, .015, silver, robot, -.225 + n * .019, .545, z);
   }
-  for(let n=0;n<4;n++) {
-    box(.035,.018,.02,material(0xb8ad8c),robot,.035,.396,-.11+n*.07);
+  for (const z of [-.235, .235]) {
+    box(.51, .045, .034, dark, robot, -.1, .553, z);
+    for (let n = 0; n < 14; n++) box(.008, .006, .011, gold, robot, -.335 + n * .036, .579, z);
   }
-  box(.035,.023,.026,material(0x8bd67a),robot,.07,.412,.22);
-  // Battery retention strap.
-  box(.045,.012,.25,carbon,robot,-.32,.57,0);
-  for(const z of [-.32,.32]) for(const x of [-.4,.12]) {
-    const screw=mesh(new THREE.CylinderGeometry(.022,.022,.012,12),silver,robot,x,.286,z);
-    box(.027,.003,.005,dark,screw,0,.007,0);
-  }
-  const printCanvas=document.createElement('canvas'); printCanvas.width=512;printCanvas.height=256;
-  const printContext=printCanvas.getContext('2d');
-  if(printContext) {
-    printContext.fillStyle='#d9e7d2'; printContext.font='bold 38px monospace';
-    printContext.fillText('ROBOIMPACT',20,52);printContext.font='24px monospace';
-    printContext.fillText('R01 / LINE CTRL',20,94);
-    printContext.strokeStyle='#94b8a2';printContext.lineWidth=3;
-    for(let n=0;n<5;n++){printContext.beginPath();printContext.moveTo(25+n*70,130);printContext.lineTo(25+n*70,180);printContext.lineTo(55+n*70,210);printContext.stroke();}
-    const ink=new THREE.CanvasTexture(printCanvas);ink.colorSpace=THREE.SRGBColorSpace;
-    const decal=mesh(new THREE.PlaneGeometry(.43,.2),new THREE.MeshBasicMaterial({map:ink,transparent:true,depthWrite:false}),robot,-.1,.388,.27);
-    decal.rotation.x=-Math.PI/2;
+  box(.11, .105, .12, silver, robot, -.43, .574, -.12);
+  box(.008, .067, .084, dark, robot, -.49, .574, -.12);
+  box(.075, .065, .075, dark, robot, -.4, .555, .16);
+  box(.04, .018, .035, silver, robot, .09, .545, -.10);
+  box(.022, .012, .025, material(0x76c96a), robot, .15, .544, -.15);
+  // Driver at the front of the axle, below the Uno tray.
+  box(.25, .025, .30, material(0xb6372e), robot, .28, .315, 0);
+  box(.065, .10, .23, dark, robot, .28, .375, 0);
+  for (const z of [-.12, .12]) box(.09, .045, .035, blue, robot, .36, .345, z);
+  const printCanvas = document.createElement('canvas'); printCanvas.width = 512; printCanvas.height = 256;
+  const printContext = printCanvas.getContext('2d');
+  if (printContext) {
+    printContext.fillStyle = '#e2eff5'; printContext.font = 'bold 52px sans-serif';
+    printContext.fillText('ARDUINO', 20, 72); printContext.font = 'bold 70px sans-serif';
+    printContext.fillText('UNO', 20, 155); printContext.font = '24px monospace';
+    printContext.fillText('DIGITAL / ANALOG', 20, 214);
+    const ink = new THREE.CanvasTexture(printCanvas); ink.colorSpace = THREE.SRGBColorSpace;
+    const decal = mesh(new THREE.PlaneGeometry(.20, .12),
+      new THREE.MeshBasicMaterial({ map: ink, transparent: true, depthWrite: false }), robot, .085, .533, .12);
+    decal.rotation.x = -Math.PI / 2;
   }
   const wheels: THREE.Group[] = [];
   for (const z of [-WHEEL_TRACK / 2, WHEEL_TRACK / 2]) {
@@ -179,25 +204,37 @@ export function createArena(host: HTMLElement): Arena {
     wheels.push(wheel);
   }
   // Narrow front boom with low sensor bar, like the supplied line-follower photo.
-  const boom = box(.85, .045, .15, carbon, robot, .53, .19, 0);
-  boom.rotation.z = -.08;
-  box(.15, .05, .91, carbon, robot, SENSOR_FORWARD, .15, 0);
-  box(.11,.018,.84,pcb,robot,SENSOR_FORWARD,.18,0);
-  const sensorLights = SENSOR_OFFSETS.map(z => {
-    box(.09, .055, .085, dark, robot, SENSOR_FORWARD, .105, z);
-    for(const dx of [-.024,.024]) mesh(new THREE.SphereGeometry(.017,10,8),material(0x16222c),robot,SENSOR_FORWARD+dx,.079,z);
-    box(.025,.012,.045,silver,robot,SENSOR_FORWARD-.04,.194,z);
-    return mesh(new THREE.SphereGeometry(.022, 12, 8), material(0x333333), robot, SENSOR_FORWARD, .19, z);
+  box(.65, .045, .12, carbon, robot, .43, .12, 0);
+  // Three individually mounted blue IR modules, with trimmers and paired optics.
+  box(.10, .035, .52, carbon, robot, SENSOR_FORWARD - .10, .14, 0);
+  const sensorLights = SENSOR_OFFSETS.map((z, index) => {
+    const blue = material(0x176eb0);
+    box(.28, .016, .11, blue, robot, SENSOR_FORWARD - .075, .17, z);
+    box(.08, .035, .07, dark, robot, SENSOR_FORWARD - .12, .196, z);
+    mesh(new THREE.CylinderGeometry(.022, .022, .014, 12), silver, robot, SENSOR_FORWARD - .12, .22, z);
+    box(.04, .01, .01, blue, robot, SENSOR_FORWARD - .12, .229, z);
+    mesh(new THREE.CylinderGeometry(.014, .014, .04, 12), gold, robot, SENSOR_FORWARD - .20, .15, z);
+    box(.075, .038, .065, dark, robot, SENSOR_FORWARD, .123, z);
+    for (const dz of [-.022, .022]) {
+      mesh(new THREE.SphereGeometry(.018, 10, 8), material(dz < 0 ? 0xbdd5df : 0x18212a), robot, SENSOR_FORWARD, .094, z + dz);
+    }
+    const light = mesh(new THREE.SphereGeometry(.014, 12, 8), material(0x333333), robot, SENSOR_FORWARD - .19, .186, z + .033);
+    [0xe55738, 0xf3c44e, 0xe8e5da].forEach((color, wire) => {
+      const dz = (wire - 1) * .018 + (index - 1) * .006;
+      const path = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(.16, .57, .235 + dz),
+        new THREE.Vector3(.28, .54, .24 + dz),
+        new THREE.Vector3(.37, .31, .08 + dz + z * .08),
+        new THREE.Vector3(.60, .17, dz + z * .08),
+        new THREE.Vector3(.70, .17, z + dz),
+        new THREE.Vector3(SENSOR_FORWARD - .20, .19, z + dz),
+      ]);
+      mesh(new THREE.TubeGeometry(path, 12, .005, 5, false), material(color), robot);
+    });
+    return light;
   });
-  for (const z of [-.41, .41]) mesh(new THREE.SphereGeometry(.033, 12, 8), silver, robot, SENSOR_FORWARD, .19, z);
-  [0xe55738, 0xf3c44e, 0x4385c5, 0xe8e5da].forEach((color, index) => {
-    const z = (index - 1.5) * .026;
-    const path = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-.2, .435, z), new THREE.Vector3(.14, .355, z),
-      new THREE.Vector3(.52, .23, z), new THREE.Vector3(.9, .2, z)
-    ]);
-    mesh(new THREE.TubeGeometry(path, 16, .009, 6, false), material(color), robot);
-  });
+  // Cable clips keep the bundled sensor harness against the boom.
+  for (const x of [.46, .61]) box(.035, .015, .12, dark, robot, x, .18, 0);
   const robotLabel = label('ROBOT R–01', '#68e5d5');
   robotLabel.position.set(0, 1.3, -.65); robot.add(robotLabel);
 

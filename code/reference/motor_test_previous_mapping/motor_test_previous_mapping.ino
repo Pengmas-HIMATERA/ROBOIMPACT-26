@@ -1,12 +1,12 @@
-// Motor A (kiri) - L298N
-const int motorL_IN1 = 10;
-const int motorL_IN2 = 9;
-const int motorL_ENA = 11; // PWM
+// Motor A (kanan) - L298N
+const int motorL_IN1 = 8;
+const int motorL_IN2 = 7;
+const int motorL_ENA = 6; // PWM
 
-// Motor B (kanan) - L298N
-const int motorR_IN3 = 8;
-const int motorR_IN4 = 7;
-const int motorR_ENB = 6; // PWM
+// Motor B (kiri) - L298N
+const int motorR_IN3 = 10;
+const int motorR_IN4 = 9;
+const int motorR_ENB = 11; // PWM
 
 // Kecepatan default (0-255)
 const int speedDefault = 200;

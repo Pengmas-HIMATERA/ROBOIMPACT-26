@@ -1,5 +1,6 @@
 import type { FirmwareState } from './firmware';
 export interface PIDConfig {
+  controller?: 'pid' | 'bang-bang';
   kp: number;
   ki: number;
   kd: number;
@@ -8,6 +9,7 @@ export interface PIDConfig {
   speed: number;
   loopMs: number;
   swapMotors: boolean;
+  massKg?: number;
   track?: 'straight' | 'pdf';
   boardMeters?: number;
   startSide?: 'left' | 'right';
@@ -28,6 +30,8 @@ export interface SimulationState {
   yawRate: number;
   leftMotor: number;
   rightMotor: number;
+  leftMotorRunning: boolean;
+  rightMotorRunning: boolean;
   push: number;
   pushRemaining: number;
   integral: number;

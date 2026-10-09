@@ -2,11 +2,12 @@
 import { element as el, input } from './dom';
 import type { Arena, PIDConfig, SimulationState, PositionSample } from './types';
 
-import { DT, MAX_TURN, createState, advance, pushRobot } from './model';
-import { SKETCH } from './firmware';
+import { DT, MAX_TURN, createState, advance, pushRobot, FORCE_UNIT_N } from './model';
+import { ROBOT_MASS_KG } from './robot';
+import { SKETCH, BANG_BANG } from './firmware';
 const gainKeys = ['kp', 'ki', 'kd'] as const;
-const presets = { p: [18, 0, 0], pd: [18, 0, 5], pid: [18, .05, 5] };
-const config: PIDConfig = { kp: SKETCH.kp, ki: SKETCH.ki, kd: SKETCH.kd, pushStrength: 6, bias: 0, speed: 1, loopMs: 10, swapMotors: false, track: 'pdf', boardMeters: 2, startSide: 'left' };
+const presets = { p: [SKETCH.kp, 0, 0], pd: [SKETCH.kp, 0, SKETCH.kd], pid: [SKETCH.kp, .05, SKETCH.kd] };
+const config: PIDConfig = { controller: 'bang-bang', kp: SKETCH.kp, ki: SKETCH.ki, kd: SKETCH.kd, pushStrength: 6, bias: 0, speed: 1, loopMs: 10, swapMotors: false, massKg: ROBOT_MASS_KG, track: 'pdf', boardMeters: 2, startSide: 'left' };
 let state: SimulationState, history: PositionSample[];
 let paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let arena: Arena | null = null;
@@ -15,7 +16,7 @@ import('./scene').then(({ createArena }) => {
   arena.setLabels(input('show-labels').checked);
   el('scene-status').hidden = true;
 }).catch(error => {
-  el('scene-status').textContent = 'Arena 3D gagal dimuat. Jalankan npm install di folder Simulator, buka lewat localhost, dan pastikan WebGL 2 tersedia. Grafik PID tetap berjalan.';
+  el('scene-status').textContent = 'Arena 3D gagal dimuat. Jalankan npm install di folder Simulator, buka lewat localhost, dan pastikan WebGL 2 tersedia. Telemetri tetap berjalan.';
   console.error('Arena 3D:', error);
 });
 
@@ -42,7 +43,7 @@ type Series = { key: keyof PositionSample; color: string; label: string; dashed?
 const charts: Record<ChartMode, { series: Series[]; description: string; label: string }> = {
   error: { series: [{ key: 'error', color: '#9a6819', label: 'Error' }, { key: 'target', color: '#77836a', label: 'Garis nol', dashed: true }], description: 'Error sensor berbobot · nilai terakhir ditahan saat garis hilang', label: 'Grafik error sensor selama 16 detik terakhir' },
   pid: { series: [{ key: 'p', color: '#ce4b22', label: 'P' }, { key: 'i', color: '#9a6819', label: 'I' }, { key: 'd', color: '#76569b', label: 'D' }], description: 'Kontribusi PID per loop · output sebelum clamp PWM', label: 'Grafik kontribusi P, I, dan D selama 16 detik terakhir' },
-  motors: { series: [{ key: 'leftMotor', color: '#3f775e', label: 'Kiri' }, { key: 'rightMotor', color: '#76569b', label: 'Kanan' }], description: 'Perintah PWM fungsi setLeftMotor / setRightMotor (0–90)', label: 'Grafik perintah PWM kiri dan kanan selama 16 detik terakhir' }
+  motors: { series: [{ key: 'leftMotor', color: '#3f775e', label: 'Kiri' }, { key: 'rightMotor', color: '#76569b', label: 'Kanan' }], description: 'Perintah PWM motor setelah kompensasi deadzone', label: 'Grafik perintah PWM kiri dan kanan selama 16 detik terakhir' }
 };
 let chartMode: ChartMode = 'error';
 function selectChart(mode: ChartMode) {
@@ -63,19 +64,21 @@ function selectChart(mode: ChartMode) {
   }));
 }
 const chartTabs = [...document.querySelectorAll<HTMLButtonElement>('[data-chart]')];
-chartTabs.forEach((button, index) => {
+chartTabs.forEach(button => {
   button.addEventListener('click', () => {
     const mode = button.dataset.chart;
     if (mode === 'error' || mode === 'pid' || mode === 'motors') selectChart(mode);
   });
   button.addEventListener('keydown', event => {
+    const visibleTabs = chartTabs.filter(tab => !tab.hidden);
+    const index = visibleTabs.indexOf(button);
     let next = index;
-    if (event.key === 'ArrowRight') next = (index + 1) % chartTabs.length;
-    else if (event.key === 'ArrowLeft') next = (index + chartTabs.length - 1) % chartTabs.length;
+    if (event.key === 'ArrowRight') next = (index + 1) % visibleTabs.length;
+    else if (event.key === 'ArrowLeft') next = (index + visibleTabs.length - 1) % visibleTabs.length;
     else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = chartTabs.length - 1;
+    else if (event.key === 'End') next = visibleTabs.length - 1;
     else return;
-    event.preventDefault(); chartTabs[next].click(); chartTabs[next].focus();
+    event.preventDefault(); visibleTabs[next].click(); visibleTabs[next].focus();
   });
 });
 input('show-labels').addEventListener('change', () => arena?.setLabels(input('show-labels').checked));
@@ -121,14 +124,14 @@ function drawChart() {
 function render() {
   arena?.update(state, config);
   const error = state.firmware.error;
-  for (const [id, value] of Object.entries({ 'target-value': state.travelled, 'position-value': state.x, 'error-value': error, 'output-value': state.u, 'p-value': state.p, 'i-value': state.i, 'd-value': state.d })) el(id).textContent = value.toFixed(2);
+  for (const [id, value] of Object.entries({ 'target-value': state.travelled, 'position-value': state.x, 'error-value': error, 'output-value': config.controller === 'bang-bang' ? state.firmware.pwmLeft - state.firmware.pwmRight : state.u, 'p-value': state.p, 'i-value': state.i, 'd-value': state.d })) el(id).textContent = value.toFixed(2);
   for (const key of ['p', 'i', 'd'] as const) {
     const width = Math.min(50, Math.abs(state[key]) / MAX_TURN * 50);
     el(key + '-bar').style.width = width + '%';
     el(key + '-bar').style.left = (state[key] >= 0 ? 50 : 50 - width) + '%';
   }
   el('time').textContent = state.t.toFixed(1) + ' s';
-  const modes = { startup: 'Startup · delay 1000 ms', tracking: 'Garis terdeteksi · PID aktif', coasting: 'Garis hilang · maju pelan 150 ms', 'search-left': 'Mencari garis ke kiri', 'search-right': 'Mencari garis ke kanan', 'lost-stop': 'Garis tidak ditemukan · motor stop — Reset untuk ulang' };
+  const modes = { startup: 'Startup · delay 1000 ms', tracking: 'Garis terdeteksi · PID aktif', forward: 'Bang-bang · maju', 'turn-left': 'Bang-bang · belok kiri', 'turn-right': 'Bang-bang · belok kanan', coasting: 'Garis hilang · maju pelan 150 ms', 'search-left': 'Mencari garis ke kiri', 'search-right': 'Mencari garis ke kanan', 'lost-stop': 'Garis tidak ditemukan · motor stop — Reset untuk ulang' };
   el('motion').textContent = state.finished ? 'Finish tengah · motor berhenti — Reset untuk ulang' : modes[state.firmware.mode];
   el('firmware-mode').textContent = state.finished ? 'FINISH' : state.firmware.mode.toUpperCase();
   el('formula').textContent = `${state.p.toFixed(2)} + ${state.i.toFixed(2)} + ${state.d.toFixed(2)} = ${state.u.toFixed(2)} · PWM ${state.firmware.pwmLeft} / ${state.firmware.pwmRight}${state.firmware.detected ? '' : ' · PID terakhir ditahan'}`;
@@ -136,7 +139,7 @@ function render() {
   el('motor-right').textContent = String(state.firmware.pwmRight);
   state.sensors.forEach((value, index) => {
     el('sensor-' + index).textContent = String(value);
-    el('sensor-' + index).classList.toggle('detected', value > SKETCH.threshold);
+    el('sensor-' + index).classList.toggle('detected', value > (config.controller === 'bang-bang' ? BANG_BANG.threshold : SKETCH.threshold));
   });
   el('heading').textContent = (state.heading * 180 / Math.PI).toFixed(1) + '°';
   el('pause').textContent = paused ? 'Lanjut' : 'Jeda';
@@ -147,12 +150,36 @@ function render() {
   drawChart();
 }
 
+function updateControllerUI() {
+  const bangBang = config.controller === 'bang-bang';
+  el('pid-controls').hidden = bangBang;
+  el('pid-theory').hidden = bangBang;
+  el('tab-pid').hidden = bangBang;
+  el('bang-bang-info').hidden = !bangBang;
+  el('output-label').textContent = bangBang ? 'Selisih PWM' : 'PID output';
+  el('sensor-description').textContent = bangBang ? 'ADC > 400 aktif · kiri / tengah / kanan.' : 'ADC > 100 aktif · angka bawah = bobot PID 3 sensor.';
+  el('robot-drive-note').textContent = bangBang ? 'Arduino Uno · 2 roda · PWM bang-bang 0 / 86' : 'Arduino Uno · 2 roda · PWM maju 86 · batas 116';
+  el('controller-status').textContent = bangBang ? 'Bang-bang 3 sensor' : 'PID 3 sensor';
+  if (bangBang && chartMode === 'pid') el('tab-motors').click();
+}
+el('controller-select').addEventListener('change', event => {
+  if (!(event.currentTarget instanceof HTMLSelectElement)) return;
+  config.controller = event.currentTarget.value === 'pid' ? 'pid' : 'bang-bang';
+  updateControllerUI(); reset();
+});
+updateControllerUI();
+
 for (const key of gainKeys) input(key).addEventListener('input', () => {
   config[key] = Number(input(key).value); el(key + '-label').textContent = config[key].toFixed(key === "ki" ? 2 : 1);
   document.querySelectorAll('[data-preset]').forEach(button => button.classList.remove('active'));
 });
 input('push-strength').addEventListener('input', () => {
-  config.pushStrength = Number(input('push-strength').value); el('push-strength-label').textContent = config.pushStrength.toFixed(1);
+  config.pushStrength = Number(input('push-strength').value); el('push-strength-label').textContent = (config.pushStrength * FORCE_UNIT_N).toFixed(2) + ' N';
+});
+input('robot-mass').addEventListener('input', () => {
+  config.massKg = Number(input('robot-mass').value) / 1000;
+  el('robot-mass-label').textContent = Math.round(config.massKg * 1000) + ' g';
+  reset();
 });
 document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach(button => button.addEventListener('click', () => {
   const preset = button.dataset.preset;

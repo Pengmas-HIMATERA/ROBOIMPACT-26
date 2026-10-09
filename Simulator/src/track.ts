@@ -32,7 +32,7 @@ export function trackStart(config: PIDConfig): {x: number; forward: number; head
 }
 
 // The central thick bar is the finish; either outer long bar is a start.
-// Check all five front sensors so an angled approach still reaches the marker.
+// Check all front sensors so an angled approach still reaches the marker.
 export function atTrackFinish(x: number, forward: number, heading: number, config: PIDConfig): boolean {
   if (config.track !== 'pdf') return false;
   const side = paperSide(config);

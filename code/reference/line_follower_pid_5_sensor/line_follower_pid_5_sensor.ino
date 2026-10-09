@@ -1,38 +1,37 @@
-// ========== PIN DEFINITIONS ==========
-const int s1 = A0; // kiri
-const int s2 = A1; // tengah
-const int s3 = A2; // kanan
-const int SENSOR_COUNT = 3;
-const int sensorPins[SENSOR_COUNT] = {s1, s2, s3};
-const int sensorPositions[SENSOR_COUNT] = {-2, 0, 2};
-const float SEARCH_DEADBAND = 0.25; // harus lebih kecil dari rentang error +/-2
+// ========== PIN SENSOR ==========
+const int s1 = A0;
+const int s2 = A1;
+const int s3 = A2;
+const int s4 = A3;
+const int s5 = A4;
+// const int s6 = A5;
 
+// ========== PIN MOTOR ==========
+// KIRI
 const int motorL_IN1 = 10;
 const int motorL_IN2 = 9;
 const int motorL_ENA = 11;
-
+// KANAN
 const int motorR_IN3 = 8;
 const int motorR_IN4 = 7;
 const int motorR_ENB = 6;
 
-const int servoPin = 4;
-
-// ========== PID CONSTANTS ==========
-float Kp =18.0; //10
-float Ki = 0.01;
+// ========== Konstanta PID ==========
+float Kp = 18.0; //10
+float Ki = 0;
 float Kd = 5.0; //5
 
 // ========== MOTOR SETTINGS ==========
-const int baseSpeedR = 60;   // PWM dasar motor kanan
-const int baseSpeedL = 60;   // PWM dasar motor kiri
-const int maxSpeed   = 85;
+const int baseSpeedR = 55;   // <-- motor kiri
+const int baseSpeedL = 55;   // <-- motor kanan
+const int maxSpeed   = 90;
 const int minSpeed   = 0;
 const int reverseBaseSpeed = 60;
 const int reverseMaxSpeed  = 90;
 const int reverseMinSpeed  = 0;
 
-// ========== THRESHOLD ==========
-const int sensorThreshold = 300;
+// ========== PEMBACAAN SENSOR ==========
+const int sensorThreshold = 100;
 
 // ========== VARIABLES ==========
 float error      = 0, lastError  = 0;
@@ -50,14 +49,16 @@ bool pickup = false;
 bool drop = false;
 unsigned long checkpointTime = 0;
 bool misi = false;
-bool sinus = false;
 
 void setup() {
   Serial.begin(115200);
 
-  for (int i = 0; i < SENSOR_COUNT; i++) {
-    pinMode(sensorPins[i], INPUT);
-  }
+  pinMode(s1, INPUT);
+  pinMode(s2, INPUT);
+  pinMode(s3, INPUT);
+  pinMode(s4, INPUT);
+  pinMode(s5, INPUT);
+  // pinMode(s6, INPUT);
 
   pinMode(motorL_IN1, OUTPUT);
   pinMode(motorL_IN2, OUTPUT);
@@ -73,15 +74,22 @@ void setup() {
 
 // ========== BACA SENSOR ==========
 float readSensors() {
-  int sensorVal[SENSOR_COUNT];
+  int sensorVal[5]; //5
   int weightedSum = 0;
   int totalWeight = 0;
 
-  for (int i = 0; i < SENSOR_COUNT; i++) {
-    sensorVal[i] = analogRead(sensorPins[i]);
-    if (sensorVal[i] > sensorThreshold) {
+  sensorVal[0] = analogRead(s1);  // posisi -15
+  sensorVal[1] = analogRead(s2);  // posisi -5
+  sensorVal[2] = analogRead(s3);  // posisi  0
+  sensorVal[3] = analogRead(s4);  // posisi +5
+  sensorVal[4] = analogRead(s5);  // posisi +15
+
+  int positions[5] = {-10, -2, 0, 2, 10};
+
+  for (int i = 0; i < 5; i++) {
+    if (sensorVal[i] > sensorThreshold) {  //<
       int weight = sensorVal[i] - sensorThreshold;
-      weightedSum += sensorPositions[i] * weight;
+      weightedSum += positions[i] * weight;
       totalWeight += weight;
     }
   }
@@ -137,7 +145,7 @@ void stopMotors() {
   analogWrite(motorR_ENB, 0);
 }
 
-void setLeftMotor(int direction, int speed) {
+void setRightMotor(int direction, int speed) {
   if (direction == 1) {
     digitalWrite(motorL_IN1, HIGH);
     digitalWrite(motorL_IN2, LOW);
@@ -152,7 +160,7 @@ void setLeftMotor(int direction, int speed) {
   analogWrite(motorL_ENA, constrain(speed, 0, 255));
 }
 
-void setRightMotor(int direction, int speed) {
+void setLeftMotor(int direction, int speed) {
   if (direction == 1) {
     digitalWrite(motorR_IN3, HIGH);
     digitalWrite(motorR_IN4, LOW);
@@ -176,59 +184,36 @@ void debugOutput() {
   // Serial.print(" | L: ");     Serial.print(leftSpeed);
   // Serial.print(" | R: ");     Serial.println(rightSpeed);
 
-  // Debug tiga sensor: kiri, tengah, kanan.
-  for (int i = 0; i < SENSOR_COUNT; i++) {
-    if (i > 0) Serial.print(" ");
-    Serial.print(analogRead(sensorPins[i]));
-  }
+  //debug sensor
+  Serial.print(analogRead(s1));
+  Serial.print(" ");
+  Serial.print(analogRead(s2));
+  Serial.print(" ");
+  Serial.print(analogRead(s3));
+  Serial.print(" ");
+  Serial.print(analogRead(s4));
+  Serial.print(" ");
+  Serial.print(analogRead(s5));
   Serial.println();
 
 }
 
 // ========== LOOP ==========
-void loop() {
+void loop() {                                         
   error = readSensors();
-  // if (analogRead(s1) > sensorThreshold &&
-  //     analogRead(s2) > sensorThreshold &&
-  //     analogRead(s3) > sensorThreshold &&
-  //     sinus != true
-  // ){
-  //   stopMotors();
-  //   delay(500);
-
-  //   setRightMotor(1, 90);
-  //   setLeftMotor(1, 0);
-  //   delay(250);
-
-  //   setRightMotor(1, 0);
-  //   setLeftMotor(1, 90);
-  //   delay(250);
-
-  //   setRightMotor(1, 90);
-  //   setLeftMotor(1, 0);
-  //   delay(250);
-
-  //   setRightMotor(1, 0);
-  //   setLeftMotor(1, 90);
-  //   delay(250);
-
-  //   sinus = true;
-  // }
-
   // ==========================
-  // PID
+  // PID NORMAL
   // ==========================
   if (lineDetected) {
 
-    if (error > SEARCH_DEADBAND)
+    if (error > 5)
       searchDirection = 1;
-    else if (error < -SEARCH_DEADBAND)
+    else if (error < -5)
       searchDirection = -1;
 
     calculatePID();
     moveMotors();
   }
-
   // ==========================
   // LOST LINE
   // ==========================

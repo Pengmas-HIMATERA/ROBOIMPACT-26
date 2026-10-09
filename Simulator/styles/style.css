@@ -170,7 +170,7 @@ footer { font-family: Consolas,monospace; border-top: 1px solid #a9b09e; margin-
 @media(max-width:460px) { .app { padding: 0 12px; }.identity { font-size: 18px; }.study-title p { margin-bottom: 5px; }h1 { font-size: 23px; }h1 span { display: block; font-size: 15px; margin-top: 3px; }.study-number { display: none; }.workspace-bar { padding: 18px 0; }.workspace-bar .live { margin-top: 5px; }.metrics strong { font-size: 21px; }.camera-controls button { padding: 6px; } }
 
 .sketch-preset { width: 100%; margin-top: 12px; text-align: left; font-size: 11px; }
-.sensor-readout { display: grid; grid-template-columns: repeat(5,1fr); gap: 5px; margin-top: 15px; text-align: center; }
+.sensor-readout { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; margin-top: 15px; text-align: center; }
 .sensor-readout span,.sensor-readout small { display: block; font: 10px Consolas,monospace; color: var(--muted); }
 .sensor-readout b { display: block; padding: 8px 0; margin: 5px 0; background: #dde0d5; font: 13px Consolas,monospace; }
 .sensor-readout .detected { background: #dbc37a; color: #392e10; }
@@ -183,3 +183,5 @@ footer { font-family: Consolas,monospace; border-top: 1px solid #a9b09e; margin-
 .track-controls a { color: #526649; font-size: 11px; }
 
 .workspace-bar.workspace-bar-compact { min-height: 48px; padding: 10px 0; justify-content: flex-end; }
+
+[hidden] { display: none !important; }

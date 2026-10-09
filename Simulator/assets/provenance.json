@@ -8,7 +8,8 @@
   ],
   "nominalPageMeters": 1.9998972222222222,
   "render": "pdftoppm -scale-to 1600 -png -singlefile",
-  "mask": "grayscale < 128; row run lengths; same rendering as texture",
+  "mask": "assets/track.svg rendered at 1600x1600 with Sharp; grayscale <128; row run lengths",
   "scaleStatus": "unconfirmed print size, not dimension annotations",
-  "startStatus": "user confirmed two sides, start from long marker; inward heading"
+  "startStatus": "user confirmed two sides, start from long marker; inward heading",
+  "vector": "assets/track.svg; 104 PDF outline paths transformed and stitched into a closed cubic-Bezier contour; embedded raster omitted"
 }
