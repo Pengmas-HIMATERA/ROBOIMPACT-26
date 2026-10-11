@@ -1,72 +1,79 @@
-// Bang-bang tiga sensor analog: hitam menghasilkan ADC lebih tinggi.
-const int SENSOR_KIRI = A0;
-const int SENSOR_TENGAH = A1;
+// ---------- PIN SENSOR ----------
+const int SENSOR_KIRI  = A3;
 const int SENSOR_KANAN = A2;
-const int IN1 = 10, IN2 = 9, motorL_ENA = 11;
-const int IN3 = 8, IN4 = 7, motorR_ENB = 6;
-const int THRESHOLD = 400;
-// PWM aktual di atas deadzone model (60); kalibrasi di robot.
-const int speedKiri = 86;
-const int speedKanan = 86;
-const int COAST_PWM = 65;
-const int STARTUP_MS = 1000;
-const int LOST_GRACE_MS = 150;
-const int SEARCH_SWEEP_MS = 1400;
-const int LOST_TIMEOUT_MS = 3000;
-int searchDirection = 1; // +1 kanan, -1 kiri.
-bool lineLost = false;
-bool stopped = false;
-unsigned long lostSinceMs = 0;
-unsigned long lastSerialMs = 0;
 
-void setMotors(int left, int right) {
-  digitalWrite(IN1, left > 0 ? HIGH : LOW); digitalWrite(IN2, LOW);
-  digitalWrite(IN3, right > 0 ? HIGH : LOW); digitalWrite(IN4, LOW);
-  analogWrite(motorL_ENA, left); analogWrite(motorR_ENB, right);
-}
+// ---------- PIN MOTOR ----------
+const int IN1 = 10;          // motor kiri
+const int IN2 = 9;           // motor kiri
+const int motorL_ENA = 11;   // PWM motor kiri
+
+const int IN3 = 8;           // motor kanan
+const int IN4 = 7;           // motor kanan
+const int motorR_ENB = 6;    // PWM motor kanan
+
+// ---------- THRESHOLD ----------
+const int THRESHOLD = 400;   // nilai 0-1023
+
+// ========== MOTOR SETTINGS (0 - 255) ==========
+const int speedKiri  = 68;   // kecepatan motor kiri
+const int speedKanan = 68;   // kecepatan motor kanan
+
 void setup() {
-  pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT);
-  pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
-  pinMode(motorL_ENA, OUTPUT); pinMode(motorR_ENB, OUTPUT);
-  Serial.begin(9600); setMotors(0, 0); delay(STARTUP_MS);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(motorL_ENA, OUTPUT);
+  pinMode(motorR_ENB, OUTPUT);
+
+  Serial.begin(9600);
 }
+
 void loop() {
-  if (stopped) { setMotors(0, 0); return; }
-  unsigned long nowMs = millis();
-  int kiri = analogRead(SENSOR_KIRI);
-  int tengah = analogRead(SENSOR_TENGAH);
-  int kanan = analogRead(SENSOR_KANAN);
-  bool left = kiri > THRESHOLD;
-  bool center = tengah > THRESHOLD;
-  bool right = kanan > THRESHOLD;
-  // Batasi Serial agar tidak menahan setiap iterasi kontrol.
-  if (nowMs - lastSerialMs >= 100) {
-    lastSerialMs = nowMs;
-    Serial.print("Kiri: "); Serial.print(kiri);
-    Serial.print(" | Tengah: "); Serial.print(tengah);
-    Serial.print(" | Kanan: "); Serial.println(kanan);
-  }
-  if (left || center || right) {
-    lineLost = false;
-    if (left != right) {
-      searchDirection = left ? -1 : 1;
-      setMotors(left ? 0 : speedKiri, right ? 0 : speedKanan);
-    } else {
-      // Tengah saja atau pola simetris: maju. Semua hitam bukan bukti finish.
-      setMotors(speedKiri, speedKanan);
-    }
+  int nilaiKiri  = analogRead(SENSOR_KIRI);
+  int nilaiKanan = analogRead(SENSOR_KANAN);
+
+  Serial.print("Kiri: "); Serial.print(nilaiKiri);
+  Serial.print(" | Kanan: "); Serial.println(nilaiKanan);
+
+  bool adaGarisKiri  = (nilaiKiri  > THRESHOLD);
+  bool adaGarisKanan = (nilaiKanan > THRESHOLD);
+
+  if (!adaGarisKiri && !adaGarisKanan) {
+    maju();
+  } else if (adaGarisKiri && !adaGarisKanan) {
+    belokKiri();
+  } else if (!adaGarisKiri && adaGarisKanan) {
+    belokKanan();
   } else {
-    if (!lineLost) { lineLost = true; lostSinceMs = nowMs; }
-    unsigned long elapsed = nowMs - lostSinceMs;
-    if (elapsed >= LOST_TIMEOUT_MS) {
-      stopped = true; // Reset board untuk mencoba lagi.
-      setMotors(0, 0);
-    } else if (elapsed < LOST_GRACE_MS) {
-      setMotors(COAST_PWM, COAST_PWM);
-    } else {
-      unsigned long phase = (elapsed - LOST_GRACE_MS) / SEARCH_SWEEP_MS;
-      int direction = phase % 2 == 0 ? searchDirection : -searchDirection;
-      setMotors(direction == 1 ? speedKiri : 0, direction == -1 ? speedKanan : 0);
-    }
+    berhenti();
   }
+}
+
+void maju() {
+  analogWrite(motorL_ENA, speedKiri);
+  analogWrite(motorR_ENB, speedKanan);
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+}
+
+void belokKiri() {
+  analogWrite(motorL_ENA, 0);
+  analogWrite(motorR_ENB, speedKanan);
+  digitalWrite(IN1, LOW);  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH); digitalWrite(IN4, LOW);
+}
+
+void belokKanan() {
+  analogWrite(motorL_ENA, speedKiri);
+  analogWrite(motorR_ENB, 0);
+  digitalWrite(IN1, HIGH); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);  digitalWrite(IN4, LOW);
+}
+
+void berhenti() {
+  analogWrite(motorL_ENA, 0);
+  analogWrite(motorR_ENB, 0);
+  digitalWrite(IN1, LOW); digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW); digitalWrite(IN4, LOW);
 }
