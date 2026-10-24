@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="368" viewBox="0 0 1280 368" role="img" aria-labelledby="title description">
   <title id="title">ROBOIMPACT 2026</title>
-  <desc id="description">Identitas dokumentasi line follower: jalur arena, robot dua roda, dan sinyal koreksi kontrol dengan aksen teal dan amber.</desc>
+  <desc id="description">Identitas dokumentasi line follower: jalur arena, robot dua roda dengan dua sensor, dan sinyal koreksi kontrol dengan aksen teal dan amber.</desc>
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M40 0H0V40" fill="none" stroke="#274047" stroke-width="1"/>
@@ -30,7 +30,6 @@
       <rect x="-30" y="-21" width="50" height="42" rx="6" fill="#eeb565"/>
       <path d="M28-20V20" stroke="#f7f4e9" stroke-width="3" stroke-linecap="round"/>
       <circle cx="28" cy="-16" r="4" fill="#59ccbb"/>
-      <circle cx="28" cy="0" r="4" fill="#59ccbb"/>
       <circle cx="28" cy="16" r="4" fill="#59ccbb"/>
     </g>
     <circle cx="1156" cy="278" r="4" fill="#eeb565"/>
