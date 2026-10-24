@@ -12,16 +12,16 @@ Buka masing-masing sketch di Arduino IDE, pilih board dan port, lalu upload. Nam
 | --- | --- | --- | --- |
 | 1 · Sensor | [sensor_test.ino](test/sensor_test/sensor_test.ino) | Nilai sensor di putih dan hitam; tentukan threshold | 115200 baud |
 | 2 · Motor | [motor_test.ino](test/motor_test/motor_test.ino) | Posisi roda dan arah putaran | 9600 baud |
-| 3 · Bang-bang | [line_follower_bang_bang.ino](line_follower_bang_bang/line_follower_bang_bang.ino) | Kontrol tiga sensor dengan threshold 400 | 9600 baud |
+| 3 · Bang-bang | [line_follower_bang_bang.ino](line_follower_bang_bang/line_follower_bang_bang.ino) | Kontrol dua sensor dengan threshold kiri/kanan terpisah, awal 400/400 | 9600 baud |
 | 4 · PID | [line_follower_pid.ino](line_follower_pid/line_follower_pid.ino) | Respons robot saat mengikuti garis | 115200 baud |
 
-> **Sebelum menjalankan:** cocokkan pin sensor dan motor dengan wiring. Sketch aktif memakai pemetaan yang sama; referensi lama memiliki pemetaan berbeda. Angkat roda saat tes motor pertama; sketch langsung menjalankan motor.
+> **Sebelum menjalankan:** cocokkan pin sensor dan motor dengan wiring. Bang-bang memakai dua sensor A3/A2, sedangkan PID memakai tiga sensor A0/A1/A2. Angkat roda saat tes motor pertama; sketch langsung menjalankan motor.
 
 ## Kontrol bang-bang
 
-Sketch bang-bang memakai **kiri A0, tengah A1, kanan A2**, threshold **400**, dan PWM maju **86/86**. Motor kiri IN10/9–EN11, kanan IN8/7–EN6, sama dengan PID dan diagram hardware.
+Sketch bang-bang memakai **kiri A3, kanan A2**, dua threshold `THRESHOLD_KIRI` / `THRESHOLD_KANAN` yang masing-masing diawali **400**, dan PWM maju **68/68**. Motor kiri IN10/9–EN11, kanan IN8/7–EN6, sama dengan PID.
 
-Sensor samping mengambil prioritas; pola simetris termasuk semua hitam tetap maju. Garis hilang memicu recovery lalu stop setelah 3 detik; Reset board untuk mencoba lagi. Tidak ada deteksi finish berdasarkan sensor saja. [Panduan lengkap](line_follower_bang_bang/README.md) memuat tabel keputusan dan tuning.
+Kedua sensor putih: maju. Hanya kiri hitam: belok kiri. Hanya kanan hitam: belok kanan. Keduanya hitam: berhenti selama pola itu terbaca. Sketch ini tidak memiliki startup delay, recovery, atau stop terkunci. [Panduan lengkap](line_follower_bang_bang/README.md) memuat tabel keputusan dan tuning.
 
 ## Panduan PID
 
@@ -60,7 +60,7 @@ Gambar menunjukkan ilustrasi respons, bukan data uji. Hasil bergantung pada gain
 Baca sensor → hitung error → hitung koreksi PID → atur PWM motor → ulangi
 ```
 
-`readSensors()` menganggap sensor aktif jika ADC **lebih besar dari 300**. Sensor kiri/tengah/kanan memakai A0/A1/A2 dengan bobot `[-2, 0, 2]`. Setiap sensor aktif menyumbang bobot sinyal `ADC - 300`:
+`readSensors()` menganggap sensor aktif jika ADC **lebih besar dari threshold sensor tersebut**. Sensor kiri/tengah/kanan memakai A0/A1/A2 dengan bobot `[-2, 0, 2]` dan tiga threshold `sensorThresholds = {300, 300, 300}`. Kalibrasikan tiap elemen secara terpisah. Setiap sensor aktif menyumbang bobot sinyal `ADC - sensorThresholds[i]`:
 
 ```text
 error = jumlah(posisi × bobot sinyal) / jumlah(bobot sinyal)
@@ -95,13 +95,13 @@ Integral dan derivative dihitung **per loop**, tanpa faktor waktu `dt`. `delay(1
 
 ### Sensor
 
-| Sensor | Sketch PID | Tes sensor |
-| --- | --- | --- |
-| S1 · kiri | A0 | A0 |
-| S2 · tengah | A1 | A1 |
-| S3 · kanan | A2 | A2 |
+| Sensor | Sketch bang-bang | Sketch PID | Tes sensor |
+| --- | --- | --- | --- |
+| S1 · kiri | A3 | A0 | A0 |
+| S2 · tengah | Tidak digunakan | A1 | A1 |
+| S3 · kanan | A2 | A2 | A2 |
 
-Sesuaikan deklarasi pin dengan wiring sebelum berpindah sketch. Tes sensor menampilkan nilai analog setiap **300 ms**.
+Sesuaikan deklarasi pin dengan wiring sebelum berpindah sketch; untuk menguji kiri bang-bang, pindahkan input tes dari A0 ke A3. Tes sensor menampilkan nilai analog setiap **300 ms**.
 
 ### Motor
 
@@ -129,7 +129,7 @@ Tes maju/mundur lain masih dikomentari. `speedDefault = 200` tidak dipakai oleh 
 
 </details>
 
-## Lost-line
+## Lost-line pada PID
 
 Jika semua sensor tidak aktif, robot mempertahankan koreksi lama terlebih dahulu, lalu mencari garis menurut arah terakhir yang tersimpan.
 

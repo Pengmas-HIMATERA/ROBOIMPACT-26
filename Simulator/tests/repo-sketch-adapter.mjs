@@ -6,34 +6,29 @@ export function repoController(source, kind) {
   if(!match)throw new Error(`Missing sketch constant ${name}`);
   return Number(match[1]);
  };
+ const numbers = name => {
+  const match=source.match(new RegExp(`(?:int|float)\\s+${name}\\[[^\\]]+\\]\\s*=\\s*\\{([^}]+)\\}`));
+  if(!match)throw new Error(`Missing sketch array ${name}`);
+  return match[1].split(',').map(value=>Number(value.trim()));
+ };
  const pid=kind==='pid';
- const settings=pid ? {kp:number('Kp'),ki:number('Ki'),kd:number('Kd'),threshold:number('sensorThreshold'),baseLeft:number('baseSpeedL'),baseRight:number('baseSpeedR'),min:number('minSpeed'),max:number('maxSpeed'),deadband:number('SEARCH_DEADBAND'),startupMs:1000,sensorCount:3} : {threshold:number('THRESHOLD'),left:number('speedKiri'),right:number('speedKanan'),coast:number('COAST_PWM'),grace:number('LOST_GRACE_MS'),sweep:number('SEARCH_SWEEP_MS'),timeout:number('LOST_TIMEOUT_MS'),startupMs:number('STARTUP_MS'),sensorCount:3};
- let lostSince=null,stopped=false,direction=1;
- const positions=pid?source.match(/sensorPositions\[SENSOR_COUNT\]\s*=\s*\{([^}]+)\}/)[1].split(',').map(Number):[];
+ const settings=pid ? {kp:number('Kp'),ki:number('Ki'),kd:number('Kd'),thresholds:numbers('sensorThresholds'),baseLeft:number('baseSpeedL'),baseRight:number('baseSpeedR'),min:number('minSpeed'),max:number('maxSpeed'),deadband:number('SEARCH_DEADBAND'),startupMs:1000,sensorCount:number('SENSOR_COUNT')} : {thresholds:[number('THRESHOLD_KIRI'),number('THRESHOLD_KANAN')],left:number('speedKiri'),right:number('speedKanan'),startupMs:0,sensorCount:2};
+ const positions=pid?numbers('sensorPositions'):[];
+ if(settings.thresholds.length!==settings.sensorCount||settings.thresholds.some(value=>!Number.isFinite(value))||pid&&positions.length!==settings.sensorCount)throw new Error('Sketch sensor arrays must match sensorCount');
  const float=Math.fround;
  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
  function step(s,adc,nowMs) {
   if(nowMs<settings.startupMs)return;
   if(!pid){
-   const l=adc[0]>settings.threshold,c=adc[1]>settings.threshold,r=adc[2]>settings.threshold;
-   s.detected=l||c||r;s.error=l===r?0:l?-2:2;
-   if(stopped){s.pwmLeft=0;s.pwmRight=0;s.mode='lost-stop';return;}
-   if(s.detected){
-    lostSince=null;
-    if(l!==r)direction=l?-1:1;
-    s.pwmLeft=l!==r&&l?0:settings.left;s.pwmRight=l!==r&&r?0:settings.right;
-    s.mode=l===r?'forward':l?'turn-left':'turn-right';
-   }else{
-    lostSince??=nowMs;const elapsed=nowMs-lostSince;
-    if(elapsed>=settings.timeout){stopped=true;s.pwmLeft=0;s.pwmRight=0;s.mode='lost-stop';}
-    else if(elapsed<settings.grace){s.pwmLeft=settings.coast;s.pwmRight=settings.coast;s.mode='coasting';}
-    else{const side=direction*(Math.floor((elapsed-settings.grace)/settings.sweep)%2===0?1:-1);
-     s.pwmLeft=side===1?settings.left:0;s.pwmRight=side===-1?settings.right:0;s.mode=side===1?'search-right':'search-left';}
-   }
+   // The plant provides left/center/right ADC; the two-sensor sketch ignores center.
+   const l=adc[0]>settings.thresholds[0],r=adc[2]>settings.thresholds[1];
+   s.detected=l||r;s.error=l===r?0:l?-2:2;
+   s.pwmLeft=l?0:settings.left;s.pwmRight=r?0:settings.right;
+   s.mode=l&&r?'stopped':l?'turn-left':r?'turn-right':'forward';
    s.output=s.pwmLeft-s.pwmRight;return;
   }
   let total=0,weighted=0;
-  for(let i=0;i<3;i++)if(adc[i]>settings.threshold){const w=adc[i]-settings.threshold;total+=w;weighted+=positions[i]*w;}
+  for(let i=0;i<settings.sensorCount;i++)if(adc[i]>settings.thresholds[i]){const w=adc[i]-settings.thresholds[i];total+=w;weighted+=positions[i]*w;}
   s.detected=total!==0;
   if(s.detected){
    s.error=float(weighted/total);s.lastLineMs=nowMs;

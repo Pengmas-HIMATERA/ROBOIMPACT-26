@@ -32,7 +32,7 @@ const int reverseMaxSpeed  = 90;
 const int reverseMinSpeed  = 0;
 
 // ========== THRESHOLD ==========
-const int sensorThreshold = 300;
+const int sensorThresholds[SENSOR_COUNT] = {300, 300, 300}; // kiri, tengah, kanan
 
 // ========== VARIABLES ==========
 float error      = 0, lastError  = 0;
@@ -79,8 +79,8 @@ float readSensors() {
 
   for (int i = 0; i < SENSOR_COUNT; i++) {
     sensorVal[i] = analogRead(sensorPins[i]);
-    if (sensorVal[i] > sensorThreshold) {
-      int weight = sensorVal[i] - sensorThreshold;
+    if (sensorVal[i] > sensorThresholds[i]) {
+      int weight = sensorVal[i] - sensorThresholds[i];
       weightedSum += sensorPositions[i] * weight;
       totalWeight += weight;
     }
@@ -188,9 +188,9 @@ void debugOutput() {
 // ========== LOOP ==========
 void loop() {
   error = readSensors();
-  // if (analogRead(s1) > sensorThreshold &&
-  //     analogRead(s2) > sensorThreshold &&
-  //     analogRead(s3) > sensorThreshold &&
+  // if (analogRead(s1) > sensorThresholds[0] &&
+  //     analogRead(s2) > sensorThresholds[1] &&
+  //     analogRead(s3) > sensorThresholds[2] &&
   //     sinus != true
   // ){
   //   stopMotors();

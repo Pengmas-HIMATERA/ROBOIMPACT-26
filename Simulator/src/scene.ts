@@ -18,7 +18,7 @@ export function createArena(host: HTMLElement): Arena {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.domElement.setAttribute('aria-label', 'Simulasi robot 3D dengan controller PID');
+  renderer.domElement.setAttribute('aria-label', 'Simulasi robot 3D dengan controller line follower');
   host.appendChild(renderer.domElement);
   renderer.domElement.addEventListener('webglcontextlost', event => {
     event.preventDefault();

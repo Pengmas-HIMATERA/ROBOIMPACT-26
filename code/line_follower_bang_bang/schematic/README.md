@@ -68,6 +68,6 @@ L298 memiliki suplai motor **VS** terpisah dari suplai logika **VSS**. Driver ju
 
 ## Batas kecocokan dengan kode
 
-Sketch bang-bang aktif sekarang memakai tiga sensor **A0/A1/A2**, sama dengan PID dan [diagram hardware umum](../../../hardware/README.md). Wiring tiga sensor bisa langsung digunakan dengan sketch aktif.
+Diagram ini tetap menunjukkan tiga sensor **A0/A1/A2**, sesuai sketch PID dan [diagram hardware umum](../../../hardware/README.md). Sketch bang-bang aktif memakai **dua sensor: kiri A3 dan kanan A2**. Untuk menjalankannya, pindahkan AO sensor kiri dari A0 ke **A3**, pertahankan AO kanan ke **A2**, dan jangan gunakan sensor tengah. Sambungan motor dan suplai tetap mengikuti diagram.
 
-Versi dua sensor A3/A2 dipertahankan hanya sebagai [referensi lama](../../reference/line_follower_bang_bang_2_sensor/line_follower_bang_bang_2_sensor.ino).
+Sketch aktif memiliki dua threshold independen `THRESHOLD_KIRI` dan `THRESHOLD_KANAN`. [Referensi dua sensor lama](../../reference/line_follower_bang_bang_2_sensor/line_follower_bang_bang_2_sensor.ino) memakai pin yang sama, tetapi masih menggunakan satu threshold bersama.

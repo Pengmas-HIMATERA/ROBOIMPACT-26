@@ -41,9 +41,11 @@ Lepaskan jumper ENA/ENB untuk PWM. Dalam rancangan suplai 5 V eksternal ini, jum
 
 | Konfigurasi | Susunan sensor dari kiri ke kanan | Kecocokan kode |
 | --- | --- | --- |
-| Tiga sensor | A0, A1, A2 | Sketch PID dan bang-bang aktif, serta kedua controller simulator |
+| Tiga sensor | A0, A1, A2 | Sketch PID aktif dan model tiga sensor simulator |
 | Lima sensor | A0, A1, A2, A3, A4 | [Sketch PID lama](../code/reference/line_follower_pid_5_sensor/line_follower_pid_5_sensor.ino) |
-| Dua sensor asli | Kiri A3, kanan A2 | [Referensi bang-bang lama](../code/reference/line_follower_bang_bang_2_sensor/line_follower_bang_bang_2_sensor.ino) |
+| Dua sensor | Kiri A3, kanan A2 | [Sketch bang-bang aktif](../code/line_follower_bang_bang/line_follower_bang_bang.ino) dan [referensi lama](../code/reference/line_follower_bang_bang_2_sensor/line_follower_bang_bang_2_sensor.ino) |
+
+Diagram tiga sensor tetap memakai A0/A1/A2. Untuk bang-bang aktif, sambungkan AO sensor kiri ke **A3** dan kanan ke **A2**; sensor tengah tidak digunakan.
 
 Masing-masing sensor: **AO → pin analog**, **VCC → 5V_REG**, dan **GND → ground bersama**. DO tidak disambungkan. Gunakan modul dengan AO dan suplai yang mendukung 5 V; modul tiga pin yang hanya punya DO memerlukan pembacaan digital dan perubahan kode.
 

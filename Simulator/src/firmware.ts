@@ -1,6 +1,6 @@
 /** Three-sensor bang-bang control and the adapted PID comparison mode. */
 import { compensatePWM } from './motor.ts';
-export const BANG_BANG = { threshold: 400, forwardPWM: 55, turnPWM: 55 } as const;
+export const BANG_BANG = { threshold: 400, forwardPWM: 55, turnPWM: 55, strength: 35, deadband: .25 } as const;
 export const SKETCH = {
   kp: 30, ki: 0, kd: 5, baseLeft: 55, baseRight: 55,
   min: 0, max: 90, threshold: 100, weights: [-2, 0, 2],
@@ -8,6 +8,12 @@ export const SKETCH = {
 } as const;
 export const RECOVERY = { graceMs: 150, timeoutMs: 3000, sweepMs: 1400, deadband: .25, coastPWM: 30, searchPWM: 55 } as const;
 export type FirmwareMode = 'startup' | 'tracking' | 'forward' | 'turn-left' | 'turn-right' | 'coasting' | 'search-left' | 'search-right' | 'lost-stop';
+export interface ControllerConfig {
+  kp: number; ki: number; kd: number;
+  controller?: 'pid' | 'bang-bang' | 'bang-bang-adjustable';
+  bangStrength?: number;
+  bangDeadband?: number;
+}
 export interface FirmwareState {
   error: number; lastError: number; integral: number; derivative: number;
   p: number; i: number; d: number; output: number;
@@ -26,7 +32,7 @@ function moveMotors(state: FirmwareState) {
   state.pwmLeft = compensatePWM(clamp(Math.trunc(SKETCH.baseLeft + state.output), SKETCH.min, SKETCH.max));
   state.pwmRight = compensatePWM(clamp(Math.trunc(SKETCH.baseRight - state.output), SKETCH.min, SKETCH.max));
 }
-export function firmwareLoop(state: FirmwareState, sensors: readonly number[], nowMs: number, gain: {kp: number; ki: number; kd: number}, controller: 'pid' | 'bang-bang' = 'pid'): void {
+export function firmwareLoop(state: FirmwareState, sensors: readonly number[], nowMs: number, gain: ControllerConfig, controller = gain.controller ?? 'pid'): void {
   if (nowMs < SKETCH.startupMs) return;
   const threshold = controller === 'bang-bang' ? BANG_BANG.threshold : SKETCH.threshold;
   let weighted = 0, total = 0;
@@ -63,12 +69,20 @@ export function firmwareLoop(state: FirmwareState, sensors: readonly number[], n
       state.mode = direction === 0 ? 'forward' : direction === -1 ? 'turn-left' : 'turn-right';
       return;
     }
-    state.p = gain.kp * state.error;
-    state.integral = clamp(state.integral + state.error, -100, 100);
-    state.i = gain.ki * state.integral;
-    state.derivative = reacquired ? 0 : state.error - state.lastError;
-    state.d = gain.kd * state.derivative;
-    state.output = state.p + state.i + state.d;
+    if (controller === 'bang-bang-adjustable') {
+      const strength = clamp(gain.bangStrength ?? BANG_BANG.strength, 0, SKETCH.max);
+      const deadband = Math.max(0, gain.bangDeadband ?? BANG_BANG.deadband);
+      state.p = 0; state.i = 0; state.d = 0;
+      state.integral = 0; state.derivative = 0;
+      state.output = Math.abs(state.error) <= deadband ? 0 : Math.sign(state.error) * strength;
+    } else {
+      state.p = gain.kp * state.error;
+      state.integral = clamp(state.integral + state.error, -100, 100);
+      state.i = gain.ki * state.integral;
+      state.derivative = reacquired ? 0 : state.error - state.lastError;
+      state.d = gain.kd * state.derivative;
+      state.output = state.p + state.i + state.d;
+    }
     state.lastError = state.error;
     moveMotors(state);
     state.mode = 'tracking';

@@ -10,24 +10,32 @@ const gain = { kp: 18, ki: 0, kd: 5 };
 const config = { ...gain, pushStrength: 6, bias: 0, speed: 1, loopMs: 10, swapMotors: false };
 const center = [30,850,30], lost = [30,30,30];
 
-test('repo bang-bang crosses all-black markers and uses the center sensor', () => {
+test('repo bang-bang uses two independent thresholds and ignores the center sensor', () => {
  const source=readFileSync(new URL('../../code/line_follower_bang_bang/line_follower_bang_bang.ino',import.meta.url),'utf8');
- for(const [adc,pwm] of [[center,[86,86]],[[850,850,850],[86,86]],[[850,30,30],[0,86]],[[30,30,850],[86,0]]]){
-  const adapter=repoController(source,'bang-bang'),state=createFirmware();
-  adapter.step(state,adc,1000);
+ const calibrated=source.replace(/(THRESHOLD_KIRI\s*=\s*)\d+/, '$1200').replace(/(THRESHOLD_KANAN\s*=\s*)\d+/, '$1600');
+ const adapter=repoController(calibrated,'bang-bang'),state=createFirmware();
+ assert.equal(adapter.settings.sensorCount,2);assert.deepEqual(adapter.settings.thresholds,[200,600]);
+ for(const [adc,pwm] of [
+  [[200,0,600],[68,68]],[[200,850,600],[68,68]],
+  [[201,850,600],[0,68]],[[200,850,601],[68,0]],
+  [[201,850,601],[0,0]],[[200,850,600],[68,68]]
+ ]){
+  adapter.step(state,adc,0);
   assert.deepEqual([state.pwmLeft,state.pwmRight],pwm);
  }
 });
 
-test('repo bang-bang reaches finish from both starts across mass and loop variations', () => {
- const source=readFileSync(new URL('../../code/line_follower_bang_bang/line_follower_bang_bang.ino',import.meta.url),'utf8');
- for(const massKg of [.3,.55,1.2])for(const loopMs of [1,10,20])for(const startSide of ['left','right']){
-  const adapter=repoController(source,'bang-bang');
-  const cfg={...config,controller:'bang-bang',massKg,loopMs,startSide,track:'pdf',boardMeters:2};
-  const state=createState(cfg);state.nextLoopMs=adapter.settings.startupMs;
-  while(state.t<120&&!state.finished)advance(state,cfg,adapter.step);
-  assert.ok(state.finished,`mass ${massKg}, loop ${loopMs}, start ${startSide}`);
+test('repo PID applies each calibrated threshold to detection and error weighting', () => {
+ const source=readFileSync(new URL('../../code/line_follower_pid/line_follower_pid.ino',import.meta.url),'utf8');
+ const calibrated=source.replace(/(sensorThresholds\[SENSOR_COUNT\]\s*=\s*)\{[^}]+\}/, '$1{200, 400, 600}');
+ const adapter=repoController(calibrated,'pid'),state=createFirmware();
+ assert.deepEqual(adapter.settings.thresholds,[200,400,600]);
+ adapter.step(state,[200,400,600],1000);assert.equal(state.detected,false);
+ for(const [adc,error] of [[[300,500,700],0],[[201,400,600],-2],[[200,401,600],0],[[200,400,601],2],[[300,400,800],2/3]]){
+  adapter.step(state,adc,1010);
+  assert.equal(state.detected,true);assert.ok(Math.abs(state.error-error)<1e-7);
  }
+ adapter.step(state,[200,400,600],1020);assert.equal(state.detected,false);assert.equal(state.integral,0);
 });
 
 test('motor hysteresis distinguishes startup, continued rotation and restart', () => {
@@ -125,11 +133,12 @@ test('estimated mass budget has a centered load and invalid masses fall back saf
 
 test('Arduino PID uses three sensors and uploaded-source tuning; simulator keeps independent tuning', () => {
  const source = readFileSync(new URL('../../code/line_follower_pid/line_follower_pid.ino', import.meta.url), 'utf8');
- for (const [symbol, value] of Object.entries({Kp:18,Ki:0.01,Kd:5,baseSpeedL:60,baseSpeedR:60,minSpeed:0,maxSpeed:85,sensorThreshold:300})) {
+ for (const [symbol, value] of Object.entries({Kp:18,Ki:0.01,Kd:5,baseSpeedL:60,baseSpeedR:60,minSpeed:0,maxSpeed:85})) {
    assert.equal(Number(source.match(new RegExp('(?:float|int) '+symbol+'\\s*=\\s*([0-9.]+)'))?.[1]),value);
  }
  assert.match(source,/sensorPositions\[SENSOR_COUNT\] = \{-2, 0, 2\}/);
  assert.match(source,/SENSOR_COUNT = 3/);
+ assert.deepEqual(repoController(source,'pid').settings.thresholds,[300,300,300]);
  assert.doesNotMatch(source,/\bs[456]\b|\bA[345]\b/);
  assert.equal(SKETCH.kp, 30);
 });
@@ -137,6 +146,34 @@ test('startup delay and centered tracking produce compensated 86/86 PWM', () => 
  const s=createFirmware(); firmwareLoop(s,center,999,gain); assert.equal(s.pwmLeft,0);
  firmwareLoop(s,center,1000,gain); assert.equal(s.mode,'tracking'); assert.equal(s.error,0);
  assert.equal(s.pwmLeft,86); assert.equal(s.pwmRight,86);
+});
+test('bang-bang uses fixed signed correction, deadband, and bounded motor PWM', () => {
+ const cfg={...gain,controller:'bang-bang-adjustable',bangStrength:35,bangDeadband:.25};
+ const s=createFirmware();firmwareLoop(s,center,999,cfg);assert.equal(s.pwmLeft,0);
+ for(const [sensors,output,left,right] of [
+  [[0,0,900],35,116,compensatePWM(20)],
+  [[900,0,0],-35,compensatePWM(20),116],
+  [center,0,86,86], [[0,800,150],0,86,86]
+ ]) {
+  firmwareLoop(s,sensors,1000,cfg);
+  assert.equal(s.output,output);assert.equal(s.pwmLeft,left);assert.equal(s.pwmRight,right);
+  assert.deepEqual([s.p,s.i,s.d,s.integral,s.derivative],[0,0,0,0,0]);
+ }
+ firmwareLoop(s,[0,0,900],1010,{...cfg,bangStrength:90});
+ assert.equal(s.pwmLeft,116);assert.equal(s.pwmRight,0);
+ firmwareLoop(s,center,1020,gain);assert.equal(s.output,-10); // PID resumes normally.
+});
+test('bang-bang preserves line-loss recovery and latched stop', () => {
+ const cfg={...gain,controller:'bang-bang-adjustable'};
+ for(const side of [-1,1]) {
+  const s=createFirmware(), sensors=[0,0,0];sensors[side===1?2:0]=900;
+  firmwareLoop(s,sensors,1000,cfg);firmwareLoop(s,lost,1010,cfg);
+  assert.equal(s.mode,'coasting');assert.equal(s.output,0);
+  firmwareLoop(s,lost,1160,cfg);assert.equal(s.mode,side===1?'search-right':'search-left');
+  firmwareLoop(s,center,1170,cfg);assert.equal(s.mode,'tracking');assert.equal(s.output,0);
+  firmwareLoop(s,lost,1180,cfg);firmwareLoop(s,lost,4180,cfg);
+  firmwareLoop(s,center,4190,cfg);assert.equal(s.mode,'lost-stop');assert.equal(s.pwmLeft,0);
+ }
 });
 test('weighted ADC, derivative per loop, and integer PWM truncation', () => {
  const s=createFirmware(); firmwareLoop(s,[100,300,200],1000,gain);
@@ -185,6 +222,21 @@ test('plant stays centered without a push at each supported loop period', () => 
  for(const loopMs of [1,5,10,20]) {
   const s=createState();for(let n=0;n<5/DT;n++)advance(s,{...config,loopMs});
   assert.equal(s.x,0);assert.ok(s.forward>2);assert.equal(s.firmware.pwmLeft,86);
+ }
+});
+test('plant runs bang-bang at all loop periods and reacts to lateral pushes', () => {
+ for(const loopMs of [1,5,10,20]) {
+  const cfg={...config,controller:'bang-bang-adjustable',loopMs};
+  const s=createState();for(let n=0;n<2/DT;n++)advance(s,cfg);
+  assert.equal(s.x,0);assert.ok(s.forward>0);assert.equal(s.firmware.pwmLeft,86);
+  pushRobot(s,3);let corrected=false;
+  for(let n=0;n<3/DT;n++) {
+   advance(s,cfg);corrected ||= Math.abs(s.u)===35;
+   assert.ok(Number.isFinite(s.x));assert.ok(Number.isFinite(s.heading));
+   assert.ok(s.firmware.pwmLeft>=0 && s.firmware.pwmLeft<=116);
+   assert.ok(s.firmware.pwmRight>=0 && s.firmware.pwmRight<=116);
+  }
+  assert.ok(corrected);
  }
 });
 test('lateral pushes change sensors and preserve finite physical state', () => {

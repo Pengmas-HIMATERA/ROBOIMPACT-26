@@ -12,7 +12,8 @@ const int IN4 = 7;           // motor kanan
 const int motorR_ENB = 6;    // PWM motor kanan
 
 // ---------- THRESHOLD ----------
-const int THRESHOLD = 400;   // nilai 0-1023
+const int THRESHOLD_KIRI  = 400; // nilai 0-1023
+const int THRESHOLD_KANAN = 400; // nilai 0-1023
 
 // ========== MOTOR SETTINGS (0 - 255) ==========
 const int speedKiri  = 68;   // kecepatan motor kiri
@@ -36,8 +37,8 @@ void loop() {
   Serial.print("Kiri: "); Serial.print(nilaiKiri);
   Serial.print(" | Kanan: "); Serial.println(nilaiKanan);
 
-  bool adaGarisKiri  = (nilaiKiri  > THRESHOLD);
-  bool adaGarisKanan = (nilaiKanan > THRESHOLD);
+  bool adaGarisKiri  = (nilaiKiri  > THRESHOLD_KIRI);
+  bool adaGarisKanan = (nilaiKanan > THRESHOLD_KANAN);
 
   if (!adaGarisKiri && !adaGarisKanan) {
     maju();

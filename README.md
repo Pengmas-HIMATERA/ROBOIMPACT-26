@@ -22,8 +22,8 @@ Start dari garis panjang di kiri atau kanan, menuju finish pada balok hitam teng
 
 | Sketch | Fungsi |
 | --- | --- |
-| [PID tiga sensor](code/line_follower_pid/line_follower_pid.ino) | Kiri/tengah/kanan A0/A1/A2; gain 18/0,01/5; threshold 300. |
-| [Bang-bang tiga sensor](code/line_follower_bang_bang/line_follower_bang_bang.ino) | A0/A1/A2, threshold 400, PWM 86, recovery lost-line, Serial 9600 baud. |
+| [PID tiga sensor](code/line_follower_pid/line_follower_pid.ino) | Kiri/tengah/kanan A0/A1/A2; gain 18/0,01/5; tiga threshold terpisah, awal 300/300/300. |
+| [Bang-bang dua sensor](code/line_follower_bang_bang/line_follower_bang_bang.ino) | Kiri A3 / kanan A2; dua threshold terpisah, awal 400/400; PWM 68; kedua hitam berhenti; Serial 9600 baud. |
 | [Tes motor](code/test/motor_test/motor_test.ino) | Pengujian motor melalui driver L298N. |
 | [Tes sensor](code/test/sensor_test/sensor_test.ino) | Pembacaan sensor garis melalui Serial Monitor. |
 

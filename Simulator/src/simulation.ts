@@ -7,7 +7,7 @@ import { ROBOT_MASS_KG } from './robot';
 import { SKETCH, BANG_BANG } from './firmware';
 const gainKeys = ['kp', 'ki', 'kd'] as const;
 const presets = { p: [SKETCH.kp, 0, 0], pd: [SKETCH.kp, 0, SKETCH.kd], pid: [SKETCH.kp, .05, SKETCH.kd] };
-const config: PIDConfig = { controller: 'bang-bang', kp: SKETCH.kp, ki: SKETCH.ki, kd: SKETCH.kd, pushStrength: 6, bias: 0, speed: 1, loopMs: 10, swapMotors: false, massKg: ROBOT_MASS_KG, track: 'pdf', boardMeters: 2, startSide: 'left' };
+const config: PIDConfig = { controller: 'bang-bang', bangStrength: BANG_BANG.strength, bangDeadband: BANG_BANG.deadband, kp: SKETCH.kp, ki: SKETCH.ki, kd: SKETCH.kd, pushStrength: 6, bias: 0, speed: 1, loopMs: 10, swapMotors: false, massKg: ROBOT_MASS_KG, track: 'pdf', boardMeters: 2, startSide: 'left' };
 let state: SimulationState, history: PositionSample[];
 let paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let arena: Arena | null = null;
@@ -131,10 +131,12 @@ function render() {
     el(key + '-bar').style.left = (state[key] >= 0 ? 50 : 50 - width) + '%';
   }
   el('time').textContent = state.t.toFixed(1) + ' s';
-  const modes = { startup: 'Startup · delay 1000 ms', tracking: 'Garis terdeteksi · PID aktif', forward: 'Bang-bang · maju', 'turn-left': 'Bang-bang · belok kiri', 'turn-right': 'Bang-bang · belok kanan', coasting: 'Garis hilang · maju pelan 150 ms', 'search-left': 'Mencari garis ke kiri', 'search-right': 'Mencari garis ke kanan', 'lost-stop': 'Garis tidak ditemukan · motor stop — Reset untuk ulang' };
+  const bang = config.controller !== 'pid';
+  const modes = { startup: 'Startup · delay 1000 ms', tracking: bang ? 'Garis terdeteksi · Bang-bang aktif' : 'Garis terdeteksi · PID aktif', forward: 'Bang-bang · maju', 'turn-left': 'Bang-bang · belok kiri', 'turn-right': 'Bang-bang · belok kanan', coasting: 'Garis hilang · maju pelan 150 ms', 'search-left': 'Mencari garis ke kiri', 'search-right': 'Mencari garis ke kanan', 'lost-stop': 'Garis tidak ditemukan · motor stop — Reset untuk ulang' };
   el('motion').textContent = state.finished ? 'Finish tengah · motor berhenti — Reset untuk ulang' : modes[state.firmware.mode];
   el('firmware-mode').textContent = state.finished ? 'FINISH' : state.firmware.mode.toUpperCase();
-  el('formula').textContent = `${state.p.toFixed(2)} + ${state.i.toFixed(2)} + ${state.d.toFixed(2)} = ${state.u.toFixed(2)} · PWM ${state.firmware.pwmLeft} / ${state.firmware.pwmRight}${state.firmware.detected ? '' : ' · PID terakhir ditahan'}`;
+  const output = bang ? `Bang-bang · e=${error.toFixed(2)} · u=${state.u.toFixed(2)}` : `${state.p.toFixed(2)} + ${state.i.toFixed(2)} + ${state.d.toFixed(2)} = ${state.u.toFixed(2)}`;
+  el('formula').textContent = `${output} · PWM ${state.firmware.pwmLeft} / ${state.firmware.pwmRight}${state.firmware.detected ? '' : ' · garis belum terdeteksi'}`;
   el('motor-left').textContent = String(state.firmware.pwmLeft);
   el('motor-right').textContent = String(state.firmware.pwmRight);
   state.sensors.forEach((value, index) => {
@@ -152,22 +154,32 @@ function render() {
 
 function updateControllerUI() {
   const bangBang = config.controller === 'bang-bang';
-  el('pid-controls').hidden = bangBang;
-  el('pid-theory').hidden = bangBang;
-  el('tab-pid').hidden = bangBang;
+  const adjustable = config.controller === 'bang-bang-adjustable';
+  el('bang-controls').hidden = !adjustable;
+  el('pid-controls').hidden = bangBang || adjustable;
+  el('pid-theory').hidden = bangBang || adjustable;
+  el('tab-pid').hidden = bangBang || adjustable;
   el('bang-bang-info').hidden = !bangBang;
-  el('output-label').textContent = bangBang ? 'Selisih PWM' : 'PID output';
+  el('output-label').textContent = bangBang ? 'Selisih PWM' : adjustable ? 'Output kontrol' : 'PID output';
   el('sensor-description').textContent = bangBang ? 'ADC > 400 aktif · kiri / tengah / kanan.' : 'ADC > 100 aktif · angka bawah = bobot PID 3 sensor.';
   el('robot-drive-note').textContent = bangBang ? 'Arduino Uno · 2 roda · PWM bang-bang 0 / 86' : 'Arduino Uno · 2 roda · PWM maju 86 · batas 116';
-  el('controller-status').textContent = bangBang ? 'Bang-bang 3 sensor' : 'PID 3 sensor';
-  if (bangBang && chartMode === 'pid') el('tab-motors').click();
+  el('controller-status').textContent = bangBang ? 'Bang-bang 3 sensor' : adjustable ? 'Bang-bang koreksi tetap' : 'PID 3 sensor';
+  if ((bangBang || adjustable) && chartMode === 'pid') el('tab-motors').click();
 }
 el('controller-select').addEventListener('change', event => {
   if (!(event.currentTarget instanceof HTMLSelectElement)) return;
-  config.controller = event.currentTarget.value === 'pid' ? 'pid' : 'bang-bang';
+  const value = event.currentTarget.value;
+  config.controller = value === 'pid' || value === 'bang-bang-adjustable' ? value : 'bang-bang';
   updateControllerUI(); reset();
 });
 updateControllerUI();
+
+for (const [id, key, digits] of [['bang-strength', 'bangStrength', 0], ['bang-deadband', 'bangDeadband', 2]] as const) {
+  input(id).addEventListener('input', () => {
+    config[key] = Number(input(id).value);
+    el(id + '-label').textContent = config[key].toFixed(digits);
+  });
+}
 
 for (const key of gainKeys) input(key).addEventListener('input', () => {
   config[key] = Number(input(key).value); el(key + '-label').textContent = config[key].toFixed(key === "ki" ? 2 : 1);

@@ -11,7 +11,7 @@ def text(x,y,s,size=22,color='#283e42',bold=False):
     parts.append(f'<text x="{x}" y="{y}" font-size="{size}" fill="{color}" font-weight="{700 if bold else 400}">{s}</text>')
 text(65,62,'ROBOIMPACT / UJI KODE REPO',34,bold=True)
 text(65,103,'Arena 2 × 2 m · massa 550 g · loop 10 ms · tanpa gangguan · deadzone 60/45 PWM',22)
-for x,kind,title,detail in [(65,'pid','PID / 3 sensor','18 / 0,01 / 5 · threshold 300 · PWM dasar 60'),(895,'bang-bang','BANG-BANG / 3 sensor','A0/A1/A2 · threshold 400 · PWM tetap 86')]:
+for x,kind,title,detail in [(65,'pid','PID / 3 sensor','18 / 0,01 / 5 · threshold 300/300/300 · PWM dasar 60'),(895,'bang-bang','BANG-BANG / 2 sensor','A3/A2 · threshold 400/400 · PWM tetap 68')]:
     text(x,156,title,27,bold=True);text(x,190,detail,18)
     track=ET.parse(SIM/'assets/track.svg').getroot()
     for key,value in [('x',x),('y',220),('width',740),('height',740)]:track.set(key,str(value))

@@ -50,12 +50,16 @@ Pelajari efek tiap gain lewat [infografik P–I–D](../code/README.md#panduan-p
 | Perspektif / Atas / Samping / Ikuti | Mengubah sudut kamera |
 | Fullscreen / Keluar | Memperbesar arena atau kembali ke panel lengkap |
 | Kecepatan 0.5× / 1× / 2× | Mengubah kecepatan pemutaran |
+| Algoritma PID / Bang-bang | Mengganti controller dan mengulang startup; default Bang-bang 3 sensor |
+| Koreksi / Deadband Bang-bang | Koreksi tetap ±35 PWM di luar deadband ±0.25; kedua nilai bisa diatur |
 | Kp, Ki, Kd | Mengubah kontribusi kontrol PID |
 | Muat gain 3 sensor | Memulihkan gain 30/0/5 dan mengulang startup |
 | Track, sisi arena, posisi start | Mengubah geometri pengujian dan mengulang perjalanan |
 | Periode loop / Tukar sisi fisik motor | Mengubah timing atau mapping motor dan mengulang perjalanan |
 
 Grafik menampilkan **error sensor**, **komponen PID**, atau **PWM motor**. Posisi X adalah koordinat arena, bukan error PID. Dorongan saat jeda baru dijalankan ketika simulasi dilanjutkan.
+
+Untuk mencoba Bang-bang koreksi tetap, tekan **Keluar**, lalu pilih **Bang-bang · koreksi tetap** di panel Controller. Output `u = sign(error) × koreksi` di luar deadband dan `u = 0` di dalamnya. Demand kiri/kanan sebelum kompensasi deadzone adalah `55 + u` / `55 − u`, dibatasi 0–90. Gain dan grafik komponen PID disembunyikan selama mode ini; gunakan grafik error atau PWM motor. Recovery garis hilang dan stop di finish tetap berlaku. Reset mempertahankan algoritma dan parameternya.
 
 ## Track
 
@@ -75,6 +79,8 @@ Ukuran 2 m berasal dari skala halaman PDF pada cetak 100%; ukuran arena fisik be
 ## Logika robot
 
 [Hasil uji kode Arduino repo](tests/REPO_SKETCH_RESULTS.md) memakai parameter dan logika sketch asli pada model fisika yang sama. Mode browser di bawah mempertahankan tuning serta recovery simulator.
+
+Sketch bang-bang aktif memakai **dua sensor A3/A2**, threshold kiri/kanan terpisah (awal 400/400), PWM 68, serta stop selama kedua sensor hitam. Mode browser tetap memakai tiga sensor dengan recovery. Sketch PID aktif memakai tiga threshold independen (awal 300/300/300). Adapter pengujian membaca konfigurasi tiap sketch; parameter browser di bawah berdiri sendiri.
 
 Mode **bang-bang** mengubah ADC menjadi keputusan biner pada threshold 400: sensor kiri aktif sendiri atau bersama tengah menghentikan roda kiri; sensor kanan menghentikan roda kanan. Tengah saja, kiri+kanan, atau ketiganya aktif membuat robot maju. Demand tetap 55 dikompensasi menjadi PWM 86; roda yang dihentikan mendapat PWM 0. Gain PID tidak memengaruhi mode ini. Saat semua sensor kehilangan garis, recovery di bawah tetap berlaku. Stop finish memakai zona tengah track agar garis start atau pola semua sensor aktif tidak menghentikan robot terlalu awal.
 

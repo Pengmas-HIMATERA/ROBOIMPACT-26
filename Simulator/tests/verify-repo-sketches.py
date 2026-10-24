@@ -20,6 +20,12 @@ samples = [
 ]
 for i in range(150):
     samples.append([10010+i*10, 301+(i*67)%550, 300+(i*113)%551, 299+(i*43)%552])
+samples += [
+    [12000, 200, 400, 600], [12010, 201, 400, 600],
+    [12020, 200, 401, 600], [12030, 200, 400, 601],
+    [12040, 300, 500, 700], [12050, 201, 850, 601],
+    [12060, 200, 850, 600],
+]
 mock = r'''
 #include <iostream>
 #include <iomanip>
@@ -35,12 +41,24 @@ struct SerialMock{void begin(int){}template<class T>void print(T){}template<clas
 with tempfile.TemporaryDirectory(prefix='roboimpact-sketch-parity-') as temp:
     temp=Path(temp)
     traces={}
-    for kind,folder in [('pid','line_follower_pid'),('bang-bang','line_follower_bang_bang')]:
+    sources={}
+    cases=[(kind,folder,profile) for kind,folder in [('pid','line_follower_pid'),('bang-bang','line_follower_bang_bang')] for profile in ['default','calibrated']]
+    for kind,folder,profile in cases:
         source=ROOT/'code'/folder/(folder+'.ino')
         text=source.read_text(encoding='utf-8')
+        if profile=='calibrated':
+            if kind=='pid':
+                text=re.sub(r'(sensorThresholds\[SENSOR_COUNT\]\s*=\s*)\{[^}]+\}', r'\g<1>{200, 400, 600}', text)
+            else:
+                text=re.sub(r'(THRESHOLD_KIRI\s*=\s*)\d+', r'\g<1>200', text)
+                text=re.sub(r'(THRESHOLD_KANAN\s*=\s*)\d+', r'\g<1>600', text)
+        key=kind+':'+profile
+        sources[key]=text
+        source=temp/(folder+'-'+profile+'.ino')
+        source.write_text(text,encoding='utf-8')
         prototypes='\n'.join(m.group(0)+';' for m in re.finditer(r'void\s+\w+\([^)]*\)',text))
         telemetry = '<< ",\\\"error\\\":" << error << ",\\\"integral\\\":" << integral << ",\\\"direction\\\":" << searchDirection' if kind=='pid' else ''
-        # A0/A1/A2 are the three physical optical modules.
+        # PID reads A0/A1/A2; bang-bang reads left A3 and right A2, ignoring center.
         main = r'''int main(){setup();unsigned long t;int l,c,r;std::cout<<std::setprecision(9);
 while(std::cin>>t>>l>>c>>r){clockMs=t;adc[A0]=l;adc[A1]=c;adc[A2]=r;adc[A3]=l;loop();
 std::cout<<"{\"left\":"<<pwm[11]<<",\"right\":"<<pwm[6] TELEMETRY <<"}\n";}}'''.replace('TELEMETRY',telemetry)
@@ -48,19 +66,18 @@ std::cout<<"{\"left\":"<<pwm[11]<<",\"right\":"<<pwm[6] TELEMETRY <<"}\n";}}'''.
         cpp.write_text(mock+prototypes+'\n#include "'+source.as_posix()+'"\n'+main,encoding='utf-8')
         subprocess.run([compiler,'-std=c++17',str(cpp),'-o',str(exe)],check=True,capture_output=True,text=True)
         run=subprocess.run([str(exe)],input='\n'.join(' '.join(map(str,s)) for s in samples)+'\n',check=True,capture_output=True,text=True)
-        traces[kind]=[json.loads(line) for line in run.stdout.splitlines()]
-    payload=temp/'traces.json';payload.write_text(json.dumps({'samples':samples,'traces':traces}),encoding='utf-8')
+        traces[key]=[json.loads(line) for line in run.stdout.splitlines()]
+    payload=temp/'traces.json';payload.write_text(json.dumps({'samples':samples,'traces':traces,'sources':sources}),encoding='utf-8')
     script=r'''
 import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
 import{repoController}from'./Simulator/tests/repo-sketch-adapter.mjs';
 import{createFirmware}from'./Simulator/src/firmware.ts';
 const data=JSON.parse(readFileSync(process.argv[1],'utf8'));
-for(const kind of ['pid','bang-bang']){
- const folder=kind==='pid'?'line_follower_pid':'line_follower_bang_bang';
- const source=readFileSync(`code/${folder}/${folder}.ino`,'utf8');
+for(const [key,source] of Object.entries(data.sources)){
+ const kind=key.split(':')[0];
  const adapter=repoController(source,kind);const state=createFirmware();
  data.samples.forEach(([time,...adc],i)=>{
-  adapter.step(state,adc,time);const actual=data.traces[kind][i];
+  adapter.step(state,adc,time);const actual=data.traces[key][i];
   assert.equal(state.pwmLeft,actual.left,`${kind} left PWM sample ${i}`);
   assert.equal(state.pwmRight,actual.right,`${kind} right PWM sample ${i}`);
   if(kind==='pid'){
@@ -69,7 +86,7 @@ for(const kind of ['pid','bang-bang']){
    assert.equal(state.searchDirection,actual.direction);
   }
  });
- console.log(`${kind}: ${data.samples.length} stateful C++/adapter samples agree (PWM and PID state).`);
+ console.log(`${key}: ${data.samples.length} stateful C++/adapter samples agree (PWM and PID state).`);
 }
 '''
     run=subprocess.run(['node','--experimental-strip-types','--input-type=module','-e',script,str(payload)],cwd=ROOT,capture_output=True,text=True)

@@ -1,9 +1,5 @@
-import type { FirmwareState } from './firmware';
-export interface PIDConfig {
-  controller?: 'pid' | 'bang-bang';
-  kp: number;
-  ki: number;
-  kd: number;
+import type { ControllerConfig, FirmwareState } from './firmware';
+export interface PIDConfig extends ControllerConfig {
   pushStrength: number;
   bias: number;
   speed: number;
