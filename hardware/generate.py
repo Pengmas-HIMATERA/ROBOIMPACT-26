@@ -151,4 +151,4 @@ class Diagram:
         self.connections += [('Battery2S.+','Switch.IN','VBAT'),('Switch.OUT','Regulator5V.IN+','VBAT_SWITCHED'),('Switch.OUT','RegulatorMotor.IN+','VBAT_SWITCHED'),('Regulator5V.OUT+','5V_REG','5V_REG'),('RegulatorMotor.OUT+','VMOTOR','VMOTOR')]
         self.connections += [(node,'GND','GND') for node in ['Battery2S.-','Regulator5V.IN-','Regulator5V.OUT-','RegulatorMotor.IN-','RegulatorMotor.OUT-','USB.GND']]
 
-for n in [3,5]: Diagram(n).build()
+Diagram(3).build()

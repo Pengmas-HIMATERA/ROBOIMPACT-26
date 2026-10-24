@@ -1,24 +1,19 @@
-# ROBOIMPACT · Simulator line follower
+[ROBOIMPACT 2026](../README.md) / Simulator
 
-Simulator 3D line follower dengan bang-bang tiga sensor sebagai default. PID tersedia sebagai pembanding; beri dorongan dan amati respons motor.
+<sub>ROBOIMPACT 2026 / SIMULATION</sub>
 
-Robot kompak memakai tiga modul sensor IR biru terpisah (kiri A0, tengah A1, kanan A2) dan Arduino Uno di tray bertiang, dengan baterai rendah di tengah dan driver di depan axle. Ukuran Uno **68.6 × 53.4 mm** serta massa **25 g** mengikuti [spesifikasi Arduino](https://store.arduino.cc/products/arduino-uno-rev3). Dimensi chassis lainnya tetap perkiraan.
+<a id="roboimpact--simulator-line-follower"></a>
 
-Deadzone motor memakai hysteresis: motor diam perlu PWM **≥60** untuk mulai, sedangkan motor yang sudah aktif dapat bertahan pada **≥45**. Di bawah ambang, target penggerak nol dan kecepatan tersisa meluruh melalui respons mekanik. Kurva kecepatan setelah aktif memakai `(PWM − 40) / (255 − 40)`. Ketiga angka merupakan asumsi awal untuk motor TT, bukan hasil kalibrasi. Kontrol memetakan demand positif di atas deadzone (minimum 60 PWM); demand nol tetap 0, sehingga berhenti dan belok satu roda tetap bekerja. Nilai dapat dikalibrasi di `src/motor.ts`.
+# Simulator line follower
 
-Massa total awal **550 g** termasuk baterai, dapat diubah pada panel ROBOT dari **300–1200 g**. Massa memengaruhi percepatan motor, respons belok, perlambatan, dan percepatan akibat dorongan. Dua baterai dan holder diperkirakan 95 g; jalur kabel sensor dibundel mengikuti boom dengan dua klip. Respons mekanik default tetap pendekatan orde satu 120 ms.
-
-Tuning tiga sensor memakai **Kp 30, Ki 0, Kd 5**, dengan pencarian garis berganti arah setiap **1.4 detik**. Uji perjalanan penuh dari kedua start pada arena 2 m, loop 10 ms, tanpa gangguan, berhasil untuk massa 300/600/900/1200 g. Pada 600 g, finish dengan deadzone tercapai sekitar 50–51 detik waktu simulasi; motor kemudian tetap berhenti sampai Reset. Gain Arduino tetap 18/0,01/5. Keberhasilan ini belum menjamin semua gain, skala arena, atau gangguan.
+Simulator 3D untuk mencoba bang-bang dan PID: beri dorongan, amati sensor serta PWM motor, lalu bandingkan responsnya.
 
 **TypeScript · Three.js · Vite**
 
-[Mulai](#mulai) · [Kontrol](#kontrol) · [Track](#track) · [Logika robot](#logika-robot) · [Pengembangan](#pengembangan) · [Materi Arduino](../code/README.md)
+[Mulai](#mulai) · [Kontrol](#kontrol) · [Track](#track) · [Logika robot](#logika-robot) · [Pengembangan](#pengembangan) · [Pengujian](tests/README.md) · [Perekaman](tools/recording/README.md) · [Materi Arduino](../code/README.md)
 
-## Preview
-
-[![Perjalanan lengkap model terbaru: start, tiga dorongan, lalu finish](assets/pid-preview.gif?v=20261009)](output/pid-follow-preview.mp4)
-
-Model terbaru memakai Uno di tray bertiang, roda TT kuning, dan tiga sensor IR biru. Kamera **Ikuti**, tiga dorongan lateral, lalu berhenti di finish; GIF dan MP4 ditayangkan **4×**. PID memakai **Kp 30, Ki 0, Kd 5** dengan massa **550 g**. Model fisiknya belum dikalibrasi dengan robot asli.
+> [!IMPORTANT]
+> Aplikasi browser memakai tiga sensor, tuning, dan recovery simulator. Sketch Arduino aktif memiliki konfigurasi sendiri: bang-bang dua sensor, PID tiga sensor. Bandingkan hasilnya melalui [pengujian sketch](tests/REPO_SKETCH_RESULTS.md).
 
 ## Mulai
 
@@ -35,10 +30,16 @@ Buka [simulator lokal](http://127.0.0.1:8765). Arena langsung memenuhi viewport 
 ### Percobaan pertama
 
 1. Pilih kamera **Ikuti**, lalu beri **Dorong kiri** atau **Dorong kanan**.
-2. Keluar dari tampilan arena penuh, ubah satu gain, lalu tekan **Reset**.
+2. Keluar dari tampilan arena penuh, pilih **PID · 3 sensor**, lalu ubah satu gain dan tekan **Reset**.
 3. Ulangi gangguan yang sama; bandingkan zig-zag dan waktu kembali ke garis.
 
-Pelajari efek tiap gain lewat [infografik P–I–D](../code/README.md#panduan-pid).
+Pelajari efek tiap gain lewat [infografik P–I–D](../code/line_follower_pid/README.md#panduan-pid).
+
+## Preview
+
+[![Perjalanan lengkap model terbaru: start, tiga dorongan, lalu finish](assets/pid-preview.gif?v=20261009)](output/pid-follow-preview.mp4)
+
+Preview tersimpan memakai mode PID, Uno di tray bertiang, roda TT kuning, dan tiga sensor IR biru. Mode awal aplikasi saat ini adalah bang-bang. Kamera **Ikuti**, tiga dorongan lateral, lalu berhenti di finish; GIF dan MP4 ditayangkan **4×**. PID memakai **Kp 30, Ki 0, Kd 5** dengan massa **550 g**. Model fisiknya belum dikalibrasi dengan robot asli.
 
 ## Kontrol
 
@@ -57,9 +58,14 @@ Pelajari efek tiap gain lewat [infografik P–I–D](../code/README.md#panduan-p
 | Track, sisi arena, posisi start | Mengubah geometri pengujian dan mengulang perjalanan |
 | Periode loop / Tukar sisi fisik motor | Mengubah timing atau mapping motor dan mengulang perjalanan |
 
-Grafik menampilkan **error sensor**, **komponen PID**, atau **PWM motor**. Posisi X adalah koordinat arena, bukan error PID. Dorongan saat jeda baru dijalankan ketika simulasi dilanjutkan.
+Grafik awal menampilkan **error sensor** selama 16 detik terakhir. Tab **komponen PID** tersedia saat algoritma PID dipilih; **PWM motor** tersedia pada semua algoritma. Posisi X adalah koordinat arena, bukan error PID. Dorongan saat jeda baru dijalankan ketika simulasi dilanjutkan.
 
-Untuk mencoba Bang-bang koreksi tetap, tekan **Keluar**, lalu pilih **Bang-bang · koreksi tetap** di panel Controller. Output `u = sign(error) × koreksi` di luar deadband dan `u = 0` di dalamnya. Demand kiri/kanan sebelum kompensasi deadzone adalah `55 + u` / `55 − u`, dibatasi 0–90. Gain dan grafik komponen PID disembunyikan selama mode ini; gunakan grafik error atau PWM motor. Recovery garis hilang dan stop di finish tetap berlaku. Reset mempertahankan algoritma dan parameternya.
+<details>
+<summary><strong>Eksperimen tambahan · Bang-bang koreksi tetap</strong></summary>
+
+Untuk mencoba Bang-bang koreksi tetap, tekan **Keluar**, lalu pilih **Bang-bang · koreksi tetap** di panel Controller. Output `u = sign(error) × koreksi` di luar deadband dan `u = 0` di dalamnya. Demand kiri/kanan sebelum kompensasi deadzone adalah `55 + u` / `55 − u`, dibatasi 0–90. Gain dan grafik komponen PID disembunyikan selama mode ini; gunakan grafik error atau PWM motor. Mode koreksi tetap memakai threshold ADC 100 dan bobot −2/0/2 seperti PID. Recovery garis hilang dan stop di finish tetap berlaku. Reset mempertahankan algoritma dan parameternya.
+
+</details>
 
 ## Track
 
@@ -72,9 +78,9 @@ Untuk mencoba Bang-bang koreksi tetap, tekan **Keluar**, lalu pilih **Bang-bang 
 | Ukuran arena | Default 2 × 2 m; dapat diubah melalui panel |
 | Track alternatif | Garis lurus untuk membandingkan respons kontrol |
 
-[SVG vektor](assets/track.svg) · [PDF sumber](public/Track.pdf) · [Provenance dan hash](assets/provenance.json)
+[SVG vektor](assets/track.svg) · [PDF untuk aplikasi](public/Track.pdf) · [Keterangan track](../docs/track/README.md) · [Provenance dan hash](assets/provenance.json)
 
-Ukuran 2 m berasal dari skala halaman PDF pada cetak 100%; ukuran arena fisik belum dikonfirmasi. Track ditampilkan sebagai geometri vektor dari SVG, sehingga tepinya tajam saat zoom. Mask sensor 1600 × 1600 dibuat dari SVG yang sama.
+PDF sumber lintasan berada di `public/Track.pdf` dan disajikan Vite sebagai `/Track.pdf`. Ukuran 2 m berasal dari skala halaman PDF pada cetak 100%; ukuran arena fisik belum dikonfirmasi. Track ditampilkan sebagai geometri vektor dari SVG, sehingga tepinya tajam saat zoom. Mask sensor 1600 × 1600 dibuat dari SVG yang sama.
 
 ## Logika robot
 
@@ -86,7 +92,7 @@ Mode **bang-bang** mengubah ADC menjadi keputusan biner pada threshold 400: sens
 
 Uji tanpa gangguan pada arena 2 m, loop 10 ms, dari kedua start dan massa 300–1.200 g mencapai finish dengan bang-bang dalam sekitar 57–62 detik simulasi. Ini hasil model, bukan jaminan robot fisik.
 
-Pilih **PID** pada dropdown Algoritma untuk membuka gain dan grafik kontribusi P/I/D. Dasar kontrol PID berasal dari [sketch line follower PID](../code/line_follower_pid/line_follower_pid.ino). Simulator menjalankan adaptasi TypeScript untuk tiga sensor, bukan mengeksekusi sketch Arduino langsung. Sketch PID Arduino kini memakai tiga sensor A0–A2 dengan gain 18/0,01/5, threshold 300, dan PWM dasar 60. Simulator mempertahankan tuning 30/0/5, threshold 100, serta kompensasi deadzone; hasil simulasinya bukan hasil menjalankan sketch Arduino langsung.
+Pilih **PID** pada dropdown Algoritma untuk membuka gain dan grafik kontribusi P/I/D. Dasar kontrol PID berasal dari [sketch line follower PID](../code/line_follower_pid/line_follower_pid.ino). Simulator menjalankan adaptasi TypeScript untuk tiga sensor, bukan mengeksekusi sketch Arduino langsung. Sketch PID Arduino kini memakai tiga sensor A0–A2 dengan gain 18/0,01/5, threshold independen 300/300/300, dan PWM dasar 60. Simulator mempertahankan tuning 30/0/5, threshold 100, serta kompensasi deadzone; hasil simulasinya bukan hasil menjalankan sketch Arduino langsung.
 
 | Bagian | Perilaku aktif |
 | --- | --- |
@@ -109,10 +115,18 @@ Recovery berikut merupakan tambahan simulator; **belum diterapkan ke sketch Ardu
 | Mencapai 3 detik | Berhenti dengan PWM 0/0 sampai Reset |
 | Garis ditemukan sebelum timeout | Kembali tracking; integral dimulai ulang dan derivative pertama nol |
 
-Arah pencarian pertama mengikuti error terakhir di luar ±0.25; jika belum diketahui, mulai ke kanan. Deteksi finish juga tambahan simulator. Lihat [perilaku sketch asli](../code/README.md#lost-line) sebelum menerapkannya ke robot.
+Arah pencarian pertama mengikuti error terakhir di luar ±0.25; jika belum diketahui, mulai ke kanan. Deteksi finish juga tambahan simulator. Lihat [perilaku sketch asli](../code/line_follower_pid/README.md#lost-line) sebelum menerapkannya ke robot.
 
 <details>
 <summary><strong>Detail model · Dimensi, motor, sensor, dan waktu</strong></summary>
+
+Robot kompak memakai tiga modul sensor IR biru terpisah (kiri A0, tengah A1, kanan A2) dan Arduino Uno di tray bertiang, dengan baterai rendah di tengah dan driver di depan axle. Ukuran Uno **68.6 × 53.4 mm** serta massa **25 g** mengikuti [spesifikasi Arduino](https://store.arduino.cc/products/arduino-uno-rev3). Dimensi chassis lainnya tetap perkiraan.
+
+Deadzone motor memakai hysteresis: motor diam perlu PWM **≥60** untuk mulai, sedangkan motor yang sudah aktif dapat bertahan pada **≥45**. Di bawah ambang, target penggerak nol dan kecepatan tersisa meluruh melalui respons mekanik. Kurva kecepatan setelah aktif memakai `(PWM − 40) / (255 − 40)`. Ketiga angka merupakan asumsi awal untuk motor TT, bukan hasil kalibrasi. Kontrol memetakan demand positif di atas deadzone (minimum 60 PWM); demand nol tetap 0, sehingga berhenti dan belok satu roda tetap bekerja. Nilai dapat dikalibrasi di `src/motor.ts`.
+
+Massa total awal **550 g** termasuk baterai, dapat diubah pada panel ROBOT dari **300–1200 g**. Massa memengaruhi percepatan motor, respons belok, perlambatan, dan percepatan akibat dorongan. Dua baterai dan holder diperkirakan 95 g; jalur kabel sensor dibundel mengikuti boom dengan dua klip. Respons mekanik default tetap pendekatan orde satu 120 ms.
+
+Tuning tiga sensor memakai **Kp 30, Ki 0, Kd 5**, dengan pencarian garis berganti arah setiap **1.4 detik**. Uji perjalanan penuh dari kedua start pada arena 2 m, loop 10 ms, tanpa gangguan, berhasil untuk massa 300/600/900/1200 g. Pada 600 g, finish dengan deadzone tercapai sekitar 50–51 detik waktu simulasi; motor kemudian tetap berhenti sampai Reset. Gain Arduino tetap 18/0,01/5. Keberhasilan ini belum menjamin semua gain, skala arena, atau gangguan.
 
 Semua ukuran dan respons mekanik berikut adalah asumsi sementara.
 
@@ -142,7 +156,7 @@ Dorongan memakai `a = F/m` dengan konversi SI ke scene. Respons motor dan belok 
 - Deadzone motor telah dimodelkan sebagai asumsi. Model belum mencakup penurunan tegangan driver, massa terkalibrasi, atau timing ADC dan Serial hardware.
 - Perhitungan JavaScript bukan emulasi bit-exact float AVR. `delay(1)` pada sketch tidak menjamin loop total 1 ms.
 
-**Mapping motor:** `setLeftMotor()` mengendalikan pin 8/7, PWM 6; `setRightMotor()` pin 10/9, PWM 11. Default simulator menganggap fungsi tersebut sesuai roda kiri/kanan. Toggle pertukaran sisi memodelkan wiring terbalik; polaritas kabel motor belum dimodelkan.
+**Mapping motor sketch aktif:** motor kiri memakai IN10/9 dan EN11; motor kanan memakai IN8/7 dan EN6. Pada PID, ini adalah `setLeftMotor()` dan `setRightMotor()`; bang-bang memakai pin yang sama melalui fungsi geraknya. Default simulator menganggap fungsi tersebut sesuai roda kiri/kanan. Toggle pertukaran sisi memodelkan wiring terbalik; polaritas kabel motor belum dimodelkan.
 
 </details>
 
@@ -154,7 +168,7 @@ Jalankan dari folder `Simulator`:
 | --- | --- |
 | `npm run dev` | Dev server pada port 8765 |
 | `npm run typecheck` | Memeriksa tipe TypeScript |
-| `npm test` | Menguji controller dan model |
+| `npm test` | Menjalankan `tests/model.test.mjs`: controller, model fisika, dan konfigurasi sketch |
 | `npm run build` | Typecheck dan build ke `dist/` |
 | `npm run preview` | Menyajikan hasil build pada port 8765; hentikan dev server dahulu |
 
@@ -162,11 +176,11 @@ Jalankan dari folder `Simulator`:
 Simulator/
 ├── src/              # Controller, model fisika, robot 3D, dan UI
 ├── styles/           # Stylesheet halaman dan arena
-├── tests/            # Pengujian controller dan model
-├── tools/recording/  # Perekam preview dan penerima video lokal
-├── assets/           # Track, mask sensor, provenance, dan GIF
-├── public/           # PDF sumber
-├── output/           # MP4 preview dan ekspor lokal
+├── tests/            # Unit/regresi, adapter sketch, benchmark, dan laporan
+├── tools/recording/  # Halaman perekam PID dan penerima video lokal
+├── assets/           # Track SVG/PNG, mask sensor, provenance, dan GIF README
+├── public/           # PDF sumber yang disajikan aplikasi pada /Track.pdf
+├── output/           # MP4 preview tersimpan; benchmark/rekaman lain diabaikan Git
 ├── index.html        # Entry point aplikasi
 └── package.json      # Dependensi dan perintah npm
 ```
@@ -174,34 +188,19 @@ Simulator/
 | File utama | Tanggung jawab |
 | --- | --- |
 | [firmware.ts](src/firmware.ts) | Pembacaan sensor, bang-bang/PID, startup, dan recovery |
-| [model.ts](src/model.ts) | Gerak, motor, gaya, dan penjadwalan controller |
+| [model.ts](src/model.ts) | Gerak, gaya, dan penjadwalan controller |
+| [motor.ts](src/motor.ts) | Deadzone, hysteresis, dan kompensasi PWM |
 | [track.ts](src/track.ts) | Geometri track, mask sensor, start, dan finish |
 | [robot.ts](src/robot.ts) | Konstanta dimensi robot bersama |
 | [scene.ts](src/scene.ts) | Tampilan Three.js dan kamera |
 | [simulation.ts](src/simulation.ts) | Kontrol UI dan histori telemetri |
 
-Tes memeriksa perilaku model dan beberapa konstanta sketch. Jika Arduino berubah, port tetap perlu ditinjau manual. Lulus tes bukan bukti keberhasilan pada robot fisik atau semua konfigurasi track.
+Rincian unit test, benchmark 36 run, dan verifikasi adapter terhadap C++ ada di [panduan pengujian](tests/README.md). `npm test` tidak menjalankan benchmark atau kompilasi C++. Jika Arduino berubah, adapter dan laporan hasil tetap perlu ditinjau. Lulus tes bukan bukti keberhasilan pada robot fisik atau semua konfigurasi track.
 
-<details>
-<summary><strong>Alat tambahan · Rekam video preview</strong></summary>
+### Perekaman preview
 
-Dengan dev server aktif, buka terminal lain di folder `Simulator` dan jalankan penerima video lokal:
+[Alat perekaman](tools/recording/README.md) menyediakan halaman browser dan penerima HTTP lokal untuk merekam skenario PID. Panduan tersebut memuat langkah menjalankan recorder, ekspor frame deterministik 4×, konversi FFmpeg, dan lokasi hasilnya. Perekam memilih PID secara eksplisit; algoritma awal aplikasi utama tetap bang-bang.
 
-```powershell
-uv run --no-project python tools/recording/record-save.py
-```
+---
 
-Buka [halaman perekam](http://127.0.0.1:8765/tools/recording/record-preview.html). Rekaman disimpan ke `output/pid-follow-preview.webm`; penerima menggunakan port 8766.
-
-Skenario preview memakai kamera Ikuti dengan dorongan berkekuatan 2.0 pada detik simulasi 12, 22, dan 35, masing-masing 0.35 detik. Gain dan massa perekam mengikuti konstanta simulator terbaru. Preview PID mencapai finish pada 50,42 detik simulasi.
-
-Untuk membuat GIF README, tekan **Ekspor GIF 4x (frame deterministik)**. Perekam menjalankan semua langkah fisika `DT`, lalu menyimpan frame PNG pada 12 fps dengan kecepatan tayang 4×. Frame berada di `output/preview-frames/`; parameter dan hasil disimpan di `output/preview-recording.json`. Setelah status **Selesai**, konversi dengan FFmpeg:
-
-```powershell
-ffmpeg -y -framerate 12 -i output/preview-frames/%05d.png -c:v libx264 -crf 20 -pix_fmt yuv420p -movflags +faststart output/pid-follow-preview.mp4
-ffmpeg -y -i output/pid-follow-preview.mp4 -filter_complex "fps=12,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" -loop 0 assets/pid-preview.gif
-```
-
-MP4 preview disimpan di Git. Ekspor lokal lain di `output/` diabaikan oleh `.gitignore`; GIF README berada di `assets/`.
-
-</details>
+[ROBOIMPACT 2026](../README.md) · Simulator · [Pengujian](tests/README.md) · [Hasil sketch](tests/REPO_SKETCH_RESULTS.md) · [Perekaman](tools/recording/README.md)

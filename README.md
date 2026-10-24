@@ -1,60 +1,91 @@
-# ROBOIMPACT 2026 | LINE FOLLOWER
+<p align="center">
+  <img src="docs/assets/roboimpact-header.svg" alt="ROBOIMPACT 2026 — line follower dan kontrol robot" width="1280">
+</p>
 
-Program Arduino dan simulator robot line follower: PID tiga sensor, bang-bang, serta tes sensor dan motor.
+<h1 align="center">ROBOIMPACT 2026</h1>
 
-Simulator memakai **bang-bang tiga sensor sebagai default**, dengan PID sebagai pembanding. Kedua sketch aktif memakai sensor kiri/tengah/kanan **A0/A1/A2** dan pemetaan motor yang sama.
+<p align="center">Dari pembacaan sensor sampai robot mengikuti garis.<br>Praktik Arduino, kontrol motor, dan eksperimen lewat simulator.</p>
 
-[Mulai praktik](code/README.md#mulai-praktik) · [Panduan bang-bang](code/line_follower_bang_bang/README.md) · [Panduan PID](code/README.md#panduan-pid) · [Simulator](Simulator/README.md) · [Hardware](hardware/README.md)
+<p align="center">
+  <a href="code/README.md#mulai-praktik"><strong>Mulai praktik →</strong></a> ·
+  <a href="#simulator">Jalankan simulator</a> ·
+  <a href="hardware/README.md">Lihat wiring</a> ·
+  <a href="Simulator/tests/README.md">Pengujian</a>
+</p>
 
-## Preview simulasi PID
+---
 
-[![Animasi lengkap model terbaru: start, tiga dorongan, dan finish](Simulator/assets/pid-preview.gif?v=20261009)](Simulator/output/pid-follow-preview.mp4)
+## Mulai praktik
 
-Preview model terbaru: Uno di tray bertiang, roda TT kuning, dan tiga sensor IR biru. Kamera Ikuti dengan tiga dorongan lateral memperlihatkan koreksi PID hingga robot berhenti di finish. GIF dan MP4 ditayangkan **4×**, memakai Kp 30, Ki 0, Kd 5 serta massa 550 g. Ini simulasi fisika asumsi dan recovery khusus simulator, bukan pengujian robot fisik. [Cara menjalankan simulator](Simulator/README.md).
+**Baca sensor → uji motor → pilih controller → amati respons.**
 
-## Track
+1. **Ukur.** Jalankan [tes sensor](code/test/README.md#tes-sensor), lalu kalibrasikan threshold tiap sensor dari nilai putih dan hitam.
+2. **Uji.** Jalankan [tes motor](code/test/README.md#tes-motor) untuk memastikan kanal kiri/kanan serta arah putaran roda.
+3. **Jalankan.** Pilih [Bang-bang](code/line_follower_bang_bang/README.md) atau [PID](code/line_follower_pid/README.md), cocokkan wiring, lalu upload lewat Arduino IDE.
 
-<img src="Simulator/assets/track.svg" alt="Track line follower: start kiri atau kanan dan finish pada balok hitam tengah" width="560">
-
-Start dari garis panjang di kiri atau kanan, menuju finish pada balok hitam tengah.
-
-## Sketch Arduino
-
-| Sketch | Fungsi |
-| --- | --- |
-| [PID tiga sensor](code/line_follower_pid/line_follower_pid.ino) | Kiri/tengah/kanan A0/A1/A2; gain 18/0,01/5; tiga threshold terpisah, awal 300/300/300. |
-| [Bang-bang dua sensor](code/line_follower_bang_bang/line_follower_bang_bang.ino) | Kiri A3 / kanan A2; dua threshold terpisah, awal 400/400; PWM 68; kedua hitam berhenti; Serial 9600 baud. |
-| [Tes motor](code/test/motor_test/motor_test.ino) | Pengujian motor melalui driver L298N. |
-| [Tes sensor](code/test/sensor_test/sensor_test.ino) | Pembacaan sensor garis melalui Serial Monitor. |
-
-Versi lama disimpan di [code/reference](code/reference/README.md). Kedua sketch aktif belum memiliki deteksi atau stop finish sendiri; stop pada zona finish merupakan fitur simulator.
-
-## Penggunaan
-
-[Panduan bang-bang](code/line_follower_bang_bang/README.md) · [Panduan PID](code/README.md#panduan-pid) · [Hardware dan wiring umum](hardware/README.md) · [Panduan simulator](Simulator/README.md)
-
-1. Buka sketch di Arduino IDE dan pilih board serta port sesuai perangkat.
-2. Periksa pemetaan pin dan kecepatan motor sebelum upload.
-3. Serial Monitor tes sensor menggunakan 115200 baud; tes motor menggunakan 9600 baud.
-
-## Pemetaan pin
-
-| Sinyal | Program utama | Tes terkait |
+| Konfigurasi | Bang-bang · 2 sensor | PID · 3 sensor |
 | --- | --- | --- |
-| Sensor PID | Kiri/tengah/kanan A0/A1/A2 | Tes sensor A0/A1/A2 |
-| Motor kiri (IN1, IN2, ENA) | 10, 9, 11 | 10, 9, 11 |
-| Motor kanan (IN3, IN4, ENB) | 8, 7, 6 | 8, 7, 6 |
+| Input kiri → kanan | A3, A2 | A0, A1, A2 |
+| Threshold awal | 400 / 400 | 300 / 300 / 300 |
+| PWM dasar kiri / kanan | 68 / 68 | 60 / 60 |
+| Serial Monitor | 9600 baud | 115200 baud |
+| Sketch | [Buka Bang-bang](code/line_follower_bang_bang/line_follower_bang_bang.ino) | [Buka PID](code/line_follower_pid/line_follower_pid.ino) |
 
-## Hardware dan wiring
+> [!IMPORTANT]
+> Pin sensor kedua sketch berbeda. Motor tetap memakai kiri **IN10/9–EN11** dan kanan **IN8/7–EN6**. Cocokkan [wiring](hardware/README.md) sebelum berganti sketch.
 
-Arduino Uno R3, driver L298N, dua motor TT, dan tiga sensor IR analog memakai rangkaian yang sama untuk bang-bang maupun PID.
+Bang-bang maju ketika kedua sensor putih, belok ketika salah satu hitam, dan berhenti selama keduanya hitam. PID memakai gain awal **18/0,01/5**, bobot posisi **−2/0/2**, serta pencarian dasar saat garis hilang. Kedua sketch memiliki threshold yang bisa dikalibrasi per sensor.
 
-![Wiring tiga sensor: Arduino Uno, L298N, dan dua motor](hardware/wiring-3-sensor.svg)
+## Simulator
 
-[PNG wiring](hardware/wiring-3-sensor.png) · [Daftar sambungan](hardware/connections-3-sensor.csv) · [Panduan hardware dan referensi lima sensor](hardware/README.md)
+Eksperimen dengan **tiga sensor**, dua roda, gangguan lateral, dan telemetri langsung. Bang-bang menjadi mode awal; PID serta bang-bang koreksi tetap tersedia untuk perbandingan.
 
-## Hasil uji simulator
+```powershell
+cd Simulator
+npm ci
+npm run dev
+```
 
-Uji sketch repo pada variasi massa 300/550/1.200 g, periode loop 1/10/20 ms, dan kedua posisi start mencapai zona finish pada **18/18 run PID** serta **18/18 run bang-bang**. Hasil ini berasal dari model simulator, bukan pengujian robot fisik atau build target Uno.
+Buka [localhost:8765](http://127.0.0.1:8765). Jika dependensi sudah terpasang, cukup jalankan `npm run dev`. [Panduan simulator →](Simulator/README.md)
 
-[Hasil, batasan, dan cara reproduksi](Simulator/tests/REPO_SKETCH_RESULTS.md)
+> [!NOTE]
+> Browser memakai tuning, kompensasi deadzone, recovery, dan penilai finish dari model simulator. Aplikasi tidak meng-upload atau mengeksekusi sketch Arduino. Ukuran arena awal **2 × 2 m** masih merupakan asumsi skala PDF.
+
+### Preview PID
+
+[![Preview PID dari start, tiga dorongan lateral, hingga finish](Simulator/assets/pid-preview.gif)](Simulator/output/pid-follow-preview.mp4)
+
+**Putar video →** [MP4 perjalanan PID](Simulator/output/pid-follow-preview.mp4). GIF dan MP4 ditayangkan **4×**, memakai gain simulator **30/0/5** dan massa estimasi **550 g**. Ini preview model, bukan hasil pengujian robot fisik.
+
+## Isi repository
+
+| Bagian | Yang ada di dalamnya |
+| --- | --- |
+| [code/](code/README.md) | Sketch aktif, tes komponen, dan ilustrasi P–I–D |
+| [hardware/](hardware/README.md) | Wiring, daftar sambungan, generator diagram, dan SVG part |
+| [Simulator/](Simulator/README.md) | Aplikasi Three.js, model robot, test, dan perekaman |
+| [docs/](docs/README.md) | Keterangan track dan aset dokumentasi |
+
+## Track dan wiring
+
+<img src="Simulator/assets/track.svg" alt="Track dengan start dari garis panjang kiri atau kanan dan finish di tengah" width="560">
+
+[PDF sumber track](Simulator/public/Track.pdf) · [Keterangan track](docs/track/README.md) · [Wiring dan daftar sambungan](hardware/README.md)
+
+Start mengikuti garis panjang dari sisi kiri atau kanan. Kedua sketch Arduino belum memiliki deteksi finish khusus; penilaian zona finish merupakan fitur simulator.
+
+## Pengujian
+
+```powershell
+# Dari folder Simulator
+npm test
+npm run typecheck
+```
+
+[Laporan benchmark](Simulator/tests/REPO_SKETCH_RESULTS.md) pada model mencatat **18/18 run PID mencapai finish**. Bang-bang dua sensor berhenti sebelum finish pada **18/18 run**, sesuai keputusan stop ketika kedua sensor hitam. Hasil ini bukan build target Uno atau pengujian hardware.
+
+[Panduan pengujian →](Simulator/tests/README.md) menjelaskan uji model, perbandingan C++ melalui mock Arduino, dan benchmark lintasan.
+
+---
+
+**ROBOIMPACT / 2026** · [Arduino](code/README.md) · [Simulator](Simulator/README.md) · [Hardware](hardware/README.md) · [Dokumentasi](docs/README.md)

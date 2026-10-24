@@ -1,0 +1,10 @@
+# Local Python environments and caches used by hardware / test tools
+.venv/
+__pycache__/
+*.py[cod]
+.uv-cache/
+
+# Local environment settings
+.env
+.env.*
+!.env.example

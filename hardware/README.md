@@ -1,6 +1,24 @@
-# Hardware umum · Robot line follower
+[ROBOIMPACT](../README.md) / Hardware
+
+<sub>ROBOIMPACT 2026 / HARDWARE</sub>
+
+# Wiring robot line follower
+
+[Diagram](#diagram-wiring) · [Pin motor](#sambungan-motor-yang-sama) · [Pin sensor](#jumlah-dan-pin-sensor) · [Daya](#daya) · [Generator dan atribusi](#sumber-part-dan-reproduksi)
 
 Rangkaian Arduino Uno R3, driver L298N, dua motor TT, dan modul sensor IR analog bisa dipakai untuk **bang-bang maupun PID**. Algoritma mengubah cara menentukan PWM motor; pilihan algoritma tidak mengharuskan rangkaian motor atau suplai daya berbeda.
+
+## Isi folder
+
+| Isi | Fungsi |
+| --- | --- |
+| `wiring-3-sensor.svg` / `.png` | Diagram utama untuk PID tiga sensor |
+| `connections-3-sensor.csv` | Daftar sambungan yang dihasilkan bersama SVG |
+| [generate.py](generate.py) | Generator SVG dan CSV; hanya memakai pustaka standar Python |
+| [parts/](parts/README.md) | SVG part yang dipakai generator serta atribusi dan lisensinya |
+
+> [!IMPORTANT]
+> Sketch Bang-bang memakai **dua sensor A3/A2**, sedangkan diagram ini memakai tiga sensor. Ikuti [tabel pin](#jumlah-dan-pin-sensor) sebelum memakai diagram untuk Bang-bang.
 
 ## Diagram wiring
 
@@ -9,12 +27,6 @@ Rangkaian Arduino Uno R3, driver L298N, dua motor TT, dan modul sensor IR analog
 ![Wiring umum tiga sensor](wiring-3-sensor.svg)
 
 [SVG editable](wiring-3-sensor.svg) · [PNG](wiring-3-sensor.png) · [Daftar sambungan CSV](connections-3-sensor.csv)
-
-### Lima sensor · Referensi versi sebelumnya
-
-![Wiring umum lima sensor](wiring-5-sensor.svg)
-
-[SVG editable](wiring-5-sensor.svg) · [PNG](wiring-5-sensor.png) · [Daftar sambungan CSV](connections-5-sensor.csv)
 
 Diagram memakai **part breadboard Fritzing** untuk bentuk Uno, driver, motor kuning, dan modul sensor biru. Jalur kabel memakai koordinat konektor dari SVG part. Tampilan sensor diberi tambahan ilustrasi kepala optik; varian sensor pada foto belum teridentifikasi pasti. Cocokkan tulisan AO/DO/GND/VCC pada modul asli. Diagram bukan file native `.fzz` atau proyek KiCad, dan bukan replika skala dimensi robot.
 
@@ -42,14 +54,13 @@ Lepaskan jumper ENA/ENB untuk PWM. Dalam rancangan suplai 5 V eksternal ini, jum
 | Konfigurasi | Susunan sensor dari kiri ke kanan | Kecocokan kode |
 | --- | --- | --- |
 | Tiga sensor | A0, A1, A2 | Sketch PID aktif dan model tiga sensor simulator |
-| Lima sensor | A0, A1, A2, A3, A4 | [Sketch PID lama](../code/reference/line_follower_pid_5_sensor/line_follower_pid_5_sensor.ino) |
-| Dua sensor | Kiri A3, kanan A2 | [Sketch bang-bang aktif](../code/line_follower_bang_bang/line_follower_bang_bang.ino) dan [referensi lama](../code/reference/line_follower_bang_bang_2_sensor/line_follower_bang_bang_2_sensor.ino) |
+| Dua sensor | Kiri A3, kanan A2 | [Sketch bang-bang aktif](../code/line_follower_bang_bang/line_follower_bang_bang.ino) |
 
 Diagram tiga sensor tetap memakai A0/A1/A2. Untuk bang-bang aktif, sambungkan AO sensor kiri ke **A3** dan kanan ke **A2**; sensor tengah tidak digunakan.
 
 Masing-masing sensor: **AO → pin analog**, **VCC → 5V_REG**, dan **GND → ground bersama**. DO tidak disambungkan. Gunakan modul dengan AO dan suplai yang mendukung 5 V; modul tiga pin yang hanya punya DO memerlukan pembacaan digital dan perubahan kode.
 
-Bang-bang dan PID sama-sama bisa ditulis untuk tiga atau lima sensor. Tabel di atas menjelaskan kode yang benar-benar tersedia sekarang, bukan batas jumlah sensor suatu algoritma.
+Tabel di atas mengikuti pin sketch aktif. Model simulator browser menggunakan tiga sensor untuk kedua controller.
 
 ## Daya
 
@@ -76,14 +87,18 @@ L298 memiliki suplai motor VS terpisah dari suplai logika VSS serta voltage drop
 | Motor TT | [Paket gear-motor](https://github.com/coderfls/Fritzing-Parts/blob/main/gear-motor.fzpz), metadata admin, dimodifikasi vanepp September 2019 |
 | Modul sensor biru empat pin | [KY-033 oleh Peter Van Epp](https://forum.fritzing.org/t/looking-for-infrared-module-with-4-pins/17081/2); ditambahkan ilustrasi kepala optik pada komposisi |
 
-SVG sumber dan metadata konektor disimpan dalam `parts/`. File referensi yang ditemukan selama pencarian juga dipertahankan; diagram akhir memakai Uno, L298N, gear-motor, dan KY-033. Aset pihak ketiga tetap mengikuti ketentuan dari sumber masing-masing.
+Empat SVG yang dipakai generator disimpan dalam [parts/](parts/README.md): Uno, L298N, gear-motor, dan KY-033. Koordinat konektor dibaca langsung dari SVG. Aset pihak ketiga tetap mengikuti ketentuan dari sumber masing-masing.
 
 Komposisi diagram SVG/PNG ini dibagikan dengan **Creative Commons Attribution-ShareAlike 3.0**, mengikuti lisensi grafis Fritzing. Atribusi: Fritzing dan para penulis part di tabel; komposisi dan routing untuk ROBOIMPACT.
 
-[`generate.py`](generate.py) menghasilkan kedua SVG dan CSV tanpa dependensi Python tambahan:
+[`generate.py`](generate.py) menghasilkan SVG tiga sensor dan CSV sambungannya tanpa dependensi Python tambahan:
 
-```sh
-python hardware/generate.py
+```powershell
+uv run --no-project python hardware/generate.py
 ```
 
-PNG adalah ekspor untuk preview. Diagram diperiksa secara visual dan berdasarkan pemetaan pin source; belum merupakan hasil uji hardware atau pemeriksaan ERC KiCad.
+Jalankan dari root repository. Generator membaca part relatif terhadap lokasi script, lalu menulis `wiring-3-sensor.svg` dan `connections-3-sensor.csv` di folder `hardware`. PNG merupakan ekspor preview terpisah dan tidak diperbarui oleh script ini. Diagram belum merupakan hasil uji hardware atau pemeriksaan ERC KiCad.
+
+---
+
+[← Halaman utama](../README.md) · [Praktik Arduino](../code/README.md) · [Part diagram →](parts/README.md)
