@@ -28,7 +28,7 @@ Gunakan diagram tiga sensor dalam [panduan hardware](../../hardware/README.md). 
 | Batas PWM tracking | 0–85 pada skala 0–255 |
 | Serial Monitor | 115200 baud |
 
-Kalibrasikan tiga threshold secara independen dari nilai putih/hitam tiap sensor. `setup()` menghentikan motor, mencetak `=== Robot Ready ===`, lalu menunggu satu detik. Keluaran Serial aktif menampilkan tiga ADC dalam urutan kiri, tengah, kanan; keluaran debug error/PID masih dikomentari.
+Kalibrasikan tiga threshold secara independen dari nilai putih/hitam tiap sensor. `setup()` menghentikan motor, mencetak `=== Robot Ready ===`, lalu menunggu satu detik. Keluaran Serial aktif menampilkan tiga ADC dalam urutan kiri, tengah, kanan.
 
 ## Panduan PID
 
@@ -124,8 +124,6 @@ PWM pencarian 90 ditulis langsung melalui fungsi motor, sehingga dapat melebihi 
 
 > [!IMPORTANT]
 > **Robot fisik belum otomatis berhenti di penanda finish.**
-
-Variabel `checkpointDetected`, `checkpointTime`, `pickup`, `drop`, dan `misi` masih dideklarasikan tetapi belum digunakan. Blok manuver `sinus` masih dikomentari.
 
 Dokumentasi ini berdasarkan pembacaan source dan belum merupakan hasil pengujian pada hardware tertentu.
 

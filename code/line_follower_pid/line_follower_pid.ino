@@ -16,18 +16,15 @@ const int motorR_IN4 = 7;
 const int motorR_ENB = 6;
 
 // ========== PID CONSTANTS ==========
-float Kp =18.0; //10
+float Kp = 18.0;
 float Ki = 0.01;
-float Kd = 5.0; //5
+float Kd = 5.0;
 
 // ========== MOTOR SETTINGS ==========
 const int baseSpeedR = 60;   // PWM dasar motor kanan
 const int baseSpeedL = 60;   // PWM dasar motor kiri
 const int maxSpeed   = 85;
 const int minSpeed   = 0;
-const int reverseBaseSpeed = 60;
-const int reverseMaxSpeed  = 90;
-const int reverseMinSpeed  = 0;
 
 // ========== THRESHOLD ==========
 const int THRESHOLD_KIRI   = 300; // s1 / A0, nilai 0-1023
@@ -44,16 +41,7 @@ float pidOutput  = 0;
 int   leftSpeed  = 0, rightSpeed = 0;
 bool  lineDetected = false;
 unsigned long lastLineTime = 0;
-float lastValidError = 0;
 int searchDirection = 0;
-
-//flag
-bool checkpointDetected = false;
-bool pickup = false;
-bool drop = false;
-unsigned long checkpointTime = 0;
-bool misi = false;
-bool sinus = false;
 
 void setup() {
   Serial.begin(115200);
@@ -98,10 +86,7 @@ float readSensors() {
   lineDetected = true;
   lastLineTime = millis();
 
-  float currentError = (float)weightedSum / totalWeight;
-  lastValidError = currentError;
-
-  return currentError;
+  return (float)weightedSum / totalWeight;
 }
 
 // ========== PID ==========
@@ -172,51 +157,17 @@ void setRightMotor(int direction, int speed) {
 
 // ========== DEBUG ==========
 void debugOutput() {
-  // //debug pid
-  // Serial.print("Detected: "); Serial.print(lineDetected ? "YES" : "NO ");
-  // Serial.print(" | Error: "); Serial.print(error, 1);
-  // Serial.print(" | PID: ");   Serial.print(pidOutput, 1);
-  // Serial.print(" | L: ");     Serial.print(leftSpeed);
-  // Serial.print(" | R: ");     Serial.println(rightSpeed);
-
   // Debug tiga sensor: kiri, tengah, kanan.
   for (int i = 0; i < SENSOR_COUNT; i++) {
     if (i > 0) Serial.print(" ");
     Serial.print(analogRead(sensorPins[i]));
   }
   Serial.println();
-
 }
 
 // ========== LOOP ==========
 void loop() {
   error = readSensors();
-  // if (analogRead(s1) > sensorThresholds[0] &&
-  //     analogRead(s2) > sensorThresholds[1] &&
-  //     analogRead(s3) > sensorThresholds[2] &&
-  //     sinus != true
-  // ){
-  //   stopMotors();
-  //   delay(500);
-
-  //   setRightMotor(1, 90);
-  //   setLeftMotor(1, 0);
-  //   delay(250);
-
-  //   setRightMotor(1, 0);
-  //   setLeftMotor(1, 90);
-  //   delay(250);
-
-  //   setRightMotor(1, 90);
-  //   setLeftMotor(1, 0);
-  //   delay(250);
-
-  //   setRightMotor(1, 0);
-  //   setLeftMotor(1, 90);
-  //   delay(250);
-
-  //   sinus = true;
-  // }
 
   // ==========================
   // PID
