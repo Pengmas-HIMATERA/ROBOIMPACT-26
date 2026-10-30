@@ -48,7 +48,8 @@ with tempfile.TemporaryDirectory(prefix='roboimpact-sketch-parity-') as temp:
         text=source.read_text(encoding='utf-8')
         if profile=='calibrated':
             if kind=='pid':
-                text=re.sub(r'(sensorThresholds\[SENSOR_COUNT\]\s*=\s*)\{[^}]+\}', r'\g<1>{200, 400, 600}', text)
+                for sensor,value in [('KIRI',200),('TENGAH',400),('KANAN',600)]:
+                    text=re.sub(r'(THRESHOLD_'+sensor+r'\s*=\s*)\d+', lambda match: match[1]+str(value), text)
             else:
                 text=re.sub(r'(THRESHOLD_KIRI\s*=\s*)\d+', r'\g<1>200', text)
                 text=re.sub(r'(THRESHOLD_KANAN\s*=\s*)\d+', r'\g<1>600', text)

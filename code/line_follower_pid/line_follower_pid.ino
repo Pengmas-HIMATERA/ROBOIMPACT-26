@@ -15,8 +15,6 @@ const int motorR_IN3 = 8;
 const int motorR_IN4 = 7;
 const int motorR_ENB = 6;
 
-const int servoPin = 4;
-
 // ========== PID CONSTANTS ==========
 float Kp =18.0; //10
 float Ki = 0.01;
@@ -32,7 +30,12 @@ const int reverseMaxSpeed  = 90;
 const int reverseMinSpeed  = 0;
 
 // ========== THRESHOLD ==========
-const int sensorThresholds[SENSOR_COUNT] = {300, 300, 300}; // kiri, tengah, kanan
+const int THRESHOLD_KIRI   = 300; // s1 / A0, nilai 0-1023
+const int THRESHOLD_TENGAH = 300; // s2 / A1, nilai 0-1023
+const int THRESHOLD_KANAN  = 300; // s3 / A2, nilai 0-1023
+const int sensorThresholds[SENSOR_COUNT] = {
+  THRESHOLD_KIRI, THRESHOLD_TENGAH, THRESHOLD_KANAN
+};
 
 // ========== VARIABLES ==========
 float error      = 0, lastError  = 0;

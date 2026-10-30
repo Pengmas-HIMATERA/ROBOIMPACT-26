@@ -28,7 +28,7 @@ Pembacaan dicetak setiap sekitar **300 ms**. Sketch ini hanya membaca sensor dan
 1. Tempatkan masing-masing sensor di atas putih dan hitam pada tinggi pemasangan yang akan dipakai.
 2. Catat rentang ADC tiap sensor; pastikan perbedaannya cukup jelas.
 3. Pilih threshold di antara kedua rentang untuk sensor terkait.
-4. Masukkan hasilnya ke `THRESHOLD_KIRI` / `THRESHOLD_KANAN` pada bang-bang atau elemen `sensorThresholds` kiri/tengah/kanan pada PID.
+4. Masukkan hasilnya ke `THRESHOLD_KIRI` / `THRESHOLD_KANAN` pada bang-bang atau `THRESHOLD_KIRI` / `THRESHOLD_TENGAH` / `THRESHOLD_KANAN` pada PID.
 
 Sketch line follower aktif menganggap **ADC lebih besar dari threshold sebagai garis hitam**. Pastikan pembacaan hardware mendukung asumsi ini.
 

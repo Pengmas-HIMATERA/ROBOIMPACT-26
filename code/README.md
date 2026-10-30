@@ -37,7 +37,7 @@ Angkat roda saat tes motor pertama dan setelah berganti sketch. Tes motor serta 
 | Konfigurasi | Bang-bang | PID | Tes komponen |
 | --- | --- | --- | --- |
 | Sensor kiri → kanan | A3, A2 | A0, A1, A2 | Tes sensor: A0, A1, A2 |
-| Threshold | `THRESHOLD_KIRI = 400`, `THRESHOLD_KANAN = 400` | `sensorThresholds = {300, 300, 300}` | Menampilkan ADC, tanpa threshold |
+| Threshold | `THRESHOLD_KIRI = 400`, `THRESHOLD_KANAN = 400` | `THRESHOLD_KIRI = 300`, `THRESHOLD_TENGAH = 300`, `THRESHOLD_KANAN = 300` | Menampilkan ADC, tanpa threshold |
 | PWM tracking awal | Kiri/kanan 68/68 | Dasar 60/60, dibatasi 0–85 | Tes motor: sesuai urutan dalam panduannya |
 | Motor kiri | IN1 D10, IN2 D9, ENA D11 PWM | Sama | Sama pada tes motor |
 | Motor kanan | IN3 D8, IN4 D7, ENB D6 PWM | Sama | Sama pada tes motor |

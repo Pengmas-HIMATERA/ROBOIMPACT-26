@@ -27,7 +27,10 @@ test('repo bang-bang uses two independent thresholds and ignores the center sens
 
 test('repo PID applies each calibrated threshold to detection and error weighting', () => {
  const source=readFileSync(new URL('../../code/line_follower_pid/line_follower_pid.ino',import.meta.url),'utf8');
- const calibrated=source.replace(/(sensorThresholds\[SENSOR_COUNT\]\s*=\s*)\{[^}]+\}/, '$1{200, 400, 600}');
+ const calibrated=source
+  .replace(/(THRESHOLD_KIRI\s*=\s*)\d+/, '$1200')
+  .replace(/(THRESHOLD_TENGAH\s*=\s*)\d+/, '$1400')
+  .replace(/(THRESHOLD_KANAN\s*=\s*)\d+/, '$1600');
  const adapter=repoController(calibrated,'pid'),state=createFirmware();
  assert.deepEqual(adapter.settings.thresholds,[200,400,600]);
  adapter.step(state,[200,400,600],1000);assert.equal(state.detected,false);

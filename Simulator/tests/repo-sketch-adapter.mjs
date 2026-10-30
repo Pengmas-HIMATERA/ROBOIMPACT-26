@@ -9,7 +9,10 @@ export function repoController(source, kind) {
  const numbers = name => {
   const match=source.match(new RegExp(`(?:int|float)\\s+${name}\\[[^\\]]+\\]\\s*=\\s*\\{([^}]+)\\}`));
   if(!match)throw new Error(`Missing sketch array ${name}`);
-  return match[1].split(',').map(value=>Number(value.trim()));
+  return match[1].split(',').map(value=>{
+   const token=value.trim();
+   return /^-?[\d.]+$/.test(token)?Number(token):number(token);
+  });
  };
  const pid=kind==='pid';
  const settings=pid ? {kp:number('Kp'),ki:number('Ki'),kd:number('Kd'),thresholds:numbers('sensorThresholds'),baseLeft:number('baseSpeedL'),baseRight:number('baseSpeedR'),min:number('minSpeed'),max:number('maxSpeed'),deadband:number('SEARCH_DEADBAND'),startupMs:1000,sensorCount:number('SENSOR_COUNT')} : {thresholds:[number('THRESHOLD_KIRI'),number('THRESHOLD_KANAN')],left:number('speedKiri'),right:number('speedKanan'),startupMs:0,sensorCount:2};

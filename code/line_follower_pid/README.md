@@ -20,7 +20,9 @@ Gunakan diagram tiga sensor dalam [panduan hardware](../../hardware/README.md). 
 
 | Parameter | Nilai awal |
 | --- | --- |
-| Threshold kiri / tengah / kanan | `sensorThresholds = {300, 300, 300}` |
+| Threshold kiri / A0 | `THRESHOLD_KIRI = 300` |
+| Threshold tengah / A1 | `THRESHOLD_TENGAH = 300` |
+| Threshold kanan / A2 | `THRESHOLD_KANAN = 300` |
 | Gain | `Kp = 18`, `Ki = 0.01`, `Kd = 5` |
 | PWM dasar kiri / kanan | 60 / 60 |
 | Batas PWM tracking | 0–85 pada skala 0–255 |
@@ -123,7 +125,7 @@ PWM pencarian 90 ditulis langsung melalui fungsi motor, sehingga dapat melebihi 
 > [!IMPORTANT]
 > **Robot fisik belum otomatis berhenti di penanda finish.**
 
-Variabel `checkpointDetected`, `checkpointTime`, `pickup`, `drop`, dan `misi` masih dideklarasikan tetapi belum digunakan. Deklarasi `servoPin` belum disertai kontrol servo. Blok manuver `sinus` masih dikomentari.
+Variabel `checkpointDetected`, `checkpointTime`, `pickup`, `drop`, dan `misi` masih dideklarasikan tetapi belum digunakan. Blok manuver `sinus` masih dikomentari.
 
 Dokumentasi ini berdasarkan pembacaan source dan belum merupakan hasil pengujian pada hardware tertentu.
 
